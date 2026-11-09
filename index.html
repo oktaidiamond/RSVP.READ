@@ -172,6 +172,7 @@ textarea:focus{border-color:var(--muted)}
 .recent-main h4{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .recent-main .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px;flex-wrap:wrap}
 .badge{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);border:1px solid color-mix(in srgb,var(--accent2) 50%,transparent);border-radius:4px;padding:0 5px}
+.recent-clean{flex:none}
 .del{color:var(--muted);width:26px;height:26px;border-radius:6px;font-size:12px}
 .del:hover{color:var(--accent);background:var(--surface)}
 
@@ -237,7 +238,8 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .read-dock-inner{padding:0 24px;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
 .read-meta{display:flex;justify-content:space-between;gap:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .read-meta span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.read-bar{height:3px;border-radius:2px;background:var(--surface2);overflow:hidden}
+.read-bar{height:3px;border-radius:2px;background:var(--surface2);overflow:hidden;transition:transform .15s ease}
+.seek:hover .read-bar,.seek.drag .read-bar{transform:scaleY(1.6)}
 .read-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .read-controls{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;font-family:'DM Sans',sans-serif;font-size:14px}
 .read-controls .dropdown{flex:0 1 210px;min-width:170px}
@@ -418,6 +420,7 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 
       <div class="panel" data-panel="recent">
         <div class="recent-head"><span class="label">Recently loaded</span><button class="btn sm ghost" id="clearRecent">Clear all</button></div>
+        <div class="status" id="recentStatus"><div class="status-row"><span class="status-text"></span><button class="status-x">✕</button></div><div class="status-bar"><i></i></div></div>
         <div id="recentList" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
@@ -433,7 +436,7 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
   <div class="read-dock">
     <div class="read-dock-inner">
       <div class="read-meta"><span id="readChapter"></span><span id="readPct">0%</span></div>
-      <div class="read-bar"><i id="readFill"></i></div>
+      <div class="seek" id="readSeek"><div class="read-bar"><i id="readFill"></i></div><span class="knob" id="readKnob"></span></div>
       <div class="read-controls">
         <button class="btn sm" id="tocBtn">≡ Contents</button>
         <span class="grp"><button class="btn sm" id="rSizeDown">A−</button><span class="val" id="rSize">19px</span><button class="btn sm" id="rSizeUp">A+</button></span>
@@ -472,7 +475,6 @@ const PRESETS = [100,200,300,400,500,600,800,1000];
 const RECENT_KEY = 'rsvp-recent';
 const RECENT_MAX = 20;
 const CLEAN_BATCH_CHARS = 16000;
-const CLEAN_SNIPPET = 100;
 const CLEAN_PARALLEL = 3;
 
 const SAMPLES = [
@@ -967,26 +969,76 @@ $('#pasteClean').onclick = async () => {
   const box = $('#pasteStatus');
   const btns = [$('#pasteClean'), $('#pasteLoad')];
   btns.forEach(b => b.disabled = true);
-  const out = await aiClean(pasteArea.value, box);
+  let out = null;
+  try { out = await aiClean(pasteArea.value, box); }
+  catch (e) { status(box, {text:`AI cleaning failed: ${(e && e.message) || e}`, type:'err'}); }
   btns.forEach(b => b.disabled = false);
   if (out){ pasteArea.value = out.text; pasteCleaned = true; }
 };
 
-function cleanPrompt(list){
-  return `Below is text extracted from a PDF or OCR scan, split into numbered units in reading order. Units longer than ${CLEAN_SNIPPET} characters are cut off.
+async function getSample(){
+  if (!window.claude || typeof window.claude.use !== 'function') return null;
+  try { return await window.claude.use('sample'); } catch { return null; }
+}
 
-List every unit that is NOT main body text: page numbers, running headers or footers, footnotes, figure or table captions, copyright or licensing lines, table-of-contents entries, and other extraction junk.
-Keep chapter titles, section headings and all body paragraphs.
-Reply with only a JSON array of the unit numbers to remove, like [3,17,18]. Reply [] if there are none.
+function cleanPrompt(list){
+  return `Below is text extracted from a PDF or OCR scan, split into numbered units in reading order.
+
+Find two kinds of problems:
+1. OCR misreadings: wrong letters (tbe→the, rn read as m), words split or merged by mistake, stray symbols.
+2. Junk that is not body text: page numbers, running headers or footers, footnotes, figure or table captions, table-of-contents entries, copyright lines.
+
+Reply with only correction lines, one per line, in these forms:
+N|wrong|right   replace text in unit N. Copy the wrong text exactly and keep it short: just the bad word or a few words.
+N|-   delete unit N entirely because it is junk.
+N|cut|first words|last words   delete a junk span inside unit N, from those first words through those last words, copied exactly.
+
+Never rephrase, modernize spelling, or change names or punctuation that could be correct. Keep chapter titles and headings. If nothing needs fixing, reply: none
 
 <units>
 ${list}
 </units>`;
 }
 
-async function getSample(){
-  if (!window.claude || typeof window.claude.use !== 'function') return null;
-  try { return await window.claude.use('sample'); } catch { return null; }
+const STOP_WORDS = new Set('the and of to a in that is was he she it for with as his her they be at by this had not but from or have an which you were all their one we there been has would when if so no will what them said who more then into could out its my me him i our your any may upon are on'.split(' '));
+
+function editDistance(a, b){
+  if (a === b) return 0;
+  let prev = Array.from({length:b.length + 1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++){
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+const normQ = s => s.replace(/[’‘`]/g, "'").replace(/[“”]/g, '"');
+function findIn(text, needle, from = 0){
+  if (!needle) return -1;
+  const i = text.indexOf(needle, from);
+  return i >= 0 ? i : normQ(text).indexOf(normQ(needle), from);
+}
+
+function parseFixes(reply){
+  const fixes = [];
+  for (const raw of String(reply || '').split('\n')){
+    const m = raw.match(/^\s*\[?(\d+)\]?\s*\|(.*)$/);
+    if (!m) continue;
+    const id = +m[1], parts = m[2].split('|').map(s => s.trim());
+    if (parts[0] === '-' && parts.length === 1) fixes.push({id, kind:'del'});
+    else if (parts[0] === 'cut' && parts.length === 3) fixes.push({id, kind:'cut', a:parts[1], b:parts[2]});
+    else if (parts.length === 2) fixes.push({id, kind:'rep', wrong:m[2].split('|')[0], right:m[2].split('|')[1]});
+  }
+  return fixes;
+}
+
+function plausibleFix(wrong, right){
+  const w = wrong.trim(), r = right.trim();
+  if (!w || w.length > 60 || r.length > 80 || w === r) return false;
+  if (!r) return !/\p{L}/u.test(w);
+  const d = editDistance(w.toLowerCase(), r.toLowerCase());
+  return d <= Math.max(2, Math.ceil(Math.max(w.length, r.length) * 0.5));
 }
 
 async function aiClean(text, box, lines = null){
@@ -999,27 +1051,26 @@ async function aiClean(text, box, lines = null){
   const byLine = !pdf && !/\n\s*\n/.test(text.trim());
   const units = [];
   for (const b of blocks){
-    if (byLine || b.lines.length > 12) b.lines.forEach(l => units.push({block:b, lines:[l], text:l.t}));
-    else units.push({block:b, lines:b.lines, text:b.text});
+    if (byLine) b.lines.forEach(l => units.push({block:b, text:l.t}));
+    else units.push({block:b, text:b.text});
   }
   const batches = [];
   let cur = null;
   units.forEach((u, i) => {
-    const snip = u.text.length > CLEAN_SNIPPET ? `${u.text.slice(0, CLEAN_SNIPPET)} …[+${u.text.length - CLEAN_SNIPPET} chars]` : u.text;
-    const row = `${i}: ${snip}`;
+    const row = `${i}: ${u.text}`;
     if (!cur || cur.size + row.length > CLEAN_BATCH_CHARS){ cur = {rows:[], ids:new Set(), size:0}; batches.push(cur); }
     cur.rows.push(row); cur.ids.add(i); cur.size += row.length + 1;
   });
-  const remove = new Set();
+  const fixes = [];
   let next = 0, finished = 0;
   const show = () => status(box, {text:`Cleaning with AI… ${finished} of ${batches.length} batch${batches.length > 1 ? 'es' : ''}`, progress:finished / Math.max(1, batches.length)});
   show();
+  const dictP = loadWordNet().catch(() => null);
   const worker = async () => {
     while (next < batches.length){
       const bt = batches[next++];
       const r = await sample(cleanPrompt(bt.rows.join('\n')), {modelTier:'quick'});
-      const m = String(r.text || '').match(/\[[\d,\s]*\]/);
-      if (m) for (const id of JSON.parse(m[0])) if (bt.ids.has(id)) remove.add(id);
+      for (const f of parseFixes(r.text)) if (bt.ids.has(f.id)) fixes.push(f);
       finished++;
       show();
     }
@@ -1033,17 +1084,60 @@ async function aiClean(text, box, lines = null){
     status(box, {text:msg, type:'err'});
     return null;
   }
+
+  const dict = await dictP;
+  const isWord = w => STOP_WORDS.has(w.toLowerCase()) || (dict && wnFind(dict, w).length > 0);
+  const deleted = new Set();
+  let fixed = 0, cuts = 0;
+  const globalReps = [];
+  for (const f of fixes.filter(f => f.kind === 'del')) deleted.add(f.id);
+  for (const f of fixes.filter(f => f.kind === 'cut')){
+    const u = units[f.id];
+    if (!u || deleted.has(f.id)) continue;
+    const s = findIn(u.text, f.a);
+    const e = s < 0 ? -1 : findIn(u.text, f.b, s);
+    if (s < 0 || e < 0) continue;
+    const end = e + f.b.length;
+    if (end - s > 1500 || end - s > u.text.length * 0.7) continue;
+    u.text = (u.text.slice(0, s) + u.text.slice(end)).replace(/\s+/g, ' ').trim();
+    cuts++;
+  }
+  for (const f of fixes.filter(f => f.kind === 'rep')){
+    const u = units[f.id];
+    if (!u || deleted.has(f.id) || !plausibleFix(f.wrong, f.right)) continue;
+    const wrong = f.wrong.trim(), right = f.right.trim();
+    const at = findIn(u.text, wrong);
+    if (at < 0) continue;
+    u.text = (u.text.slice(0, at) + right + u.text.slice(at + wrong.length)).replace(/\s+/g, ' ').trim();
+    fixed++;
+    const single = /^[\p{L}]+$/u;
+    if (single.test(wrong) && single.test(right) && !isWord(wrong) && isWord(right)) globalReps.push([wrong, right]);
+  }
+  const seenRep = new Set();
+  for (const [wrong, right] of globalReps){
+    if (seenRep.has(wrong)) continue;
+    seenRep.add(wrong);
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])${wrong.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'gu');
+    units.forEach((u, i) => {
+      if (deleted.has(i)) return;
+      u.text = u.text.replace(re, () => { fixed++; return right; });
+    });
+  }
+
   const kept = new Map();
   units.forEach((u, i) => {
-    if (remove.has(i)) return;
+    if (deleted.has(i) || !u.text) return;
     if (!kept.has(u.block)) kept.set(u.block, []);
-    kept.get(u.block).push(...u.lines);
+    kept.get(u.block).push(u.text);
   });
-  const out = blocks.filter(b => kept.has(b)).map(b => reflow(kept.get(b).map(l => l.t))).filter(Boolean).join('\n\n');
+  const outBlocks = blocks.filter(b => kept.has(b)).map(b => ({b, text:reflow(kept.get(b))})).filter(o => o.text);
+  const out = outBlocks.map(o => o.text).join('\n\n');
   if (!out.trim()){ status(box, {text:'Cleaning found no body text, so the original was kept.', type:'err'}); return null; }
-  const outLines = pdf ? blocks.flatMap(b => (kept.get(b) || []).map(l => l.src)) : null;
-  const before = tokenize(text).flat().length, after = tokenize(out).flat().length;
-  status(box, {text:`✓ Cleaned — removed ${fmtNum(remove.size)} noisy piece${remove.size === 1 ? '' : 's'}, ${fmtNum(before)} → ${fmtNum(after)} words`, progress:1, type:'ok'});
+  const outLines = pdf ? outBlocks.map((o, i) => ({t:o.text, s:o.b.s, b:o.b.b, p:1, x:0, y:1e7 - i * 1000})) : null;
+  const parts = [];
+  if (fixed) parts.push(`fixed ${fmtNum(fixed)} word${fixed === 1 ? '' : 's'}`);
+  if (deleted.size + cuts) parts.push(`removed ${fmtNum(deleted.size + cuts)} junk piece${deleted.size + cuts === 1 ? '' : 's'}`);
+  status(box, {text:parts.length ? `✓ Cleaned — ${parts.join(', ')}` : '✓ Nothing needed fixing', progress:1, type:'ok'});
   return {text:out, lines:outLines};
 }
 
@@ -1195,7 +1289,9 @@ $('#uploadLoad').onclick = () => { if (U.text) loadText(U.text, {title:U.name, c
 $('#uploadClean').onclick = async () => {
   const btns = [$('#uploadClean'), $('#uploadLoad')];
   btns.forEach(b => b.disabled = true);
-  const out = await aiClean(U.text, $('#uploadStatus'), U.lines);
+  let out = null;
+  try { out = await aiClean(U.text, $('#uploadStatus'), U.lines); }
+  catch (e) { status($('#uploadStatus'), {text:`AI cleaning failed: ${(e && e.message) || e}`, type:'err'}); }
   btns.forEach(b => b.disabled = false);
   if (out){ U.text = out.text; U.lines = out.lines; U.cleaned = true; }
 };
@@ -1252,8 +1348,31 @@ function renderRecent(){
   list.forEach(e => {
     const row = document.createElement('div');
     row.className = 'recent-item';
-    row.innerHTML = `<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div><button class="del">✕</button>`;
+    row.innerHTML = `<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div>${e.cleaned ? '' : '<button class="btn ai sm recent-clean">✦ Clean</button>'}<button class="del">✕</button>`;
     row.onclick = () => loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null});
+    const cb = row.querySelector('.recent-clean');
+    if (cb) cb.onclick = async ev => {
+      ev.stopPropagation();
+      $$('.recent-clean').forEach(b => b.disabled = true);
+      let out = null;
+      const box = $('#recentStatus');
+      try { out = await aiClean(e.text, box, e.lines); }
+      catch (err) { status(box, {text:`AI cleaning failed: ${(err && err.message) || err}`, type:'err'}); }
+      if (out){
+        const wasLoaded = S.text === e.text.trim();
+        const list = readRecent().filter(x => x.id !== e.id && x.text !== out.text);
+        const idx = readRecent().findIndex(x => x.id === e.id);
+        list.splice(Math.max(0, idx), 0, {...e, text:out.text, lines:out.lines, cleaned:true, words:tokenize(out.text).flat().length});
+        writeRecent(list);
+        if (wasLoaded){
+          const i = S.idx;
+          const n = S.words.length;
+          loadText(out.text, {title:e.title, cleaned:true, lines:out.lines});
+          seek(Math.round(i / Math.max(1, n) * S.words.length));
+        }
+      }
+      renderRecent();
+    };
     row.querySelector('.del').onclick = ev => {
       ev.stopPropagation();
       writeRecent(readRecent().filter(x => x.id !== e.id));
@@ -1471,7 +1590,7 @@ function updateReadProgress(){
   const first = R.blockEls[0], last = R.blockEls[R.blockEls.length - 1];
   const fits = !first || last.offsetTop + last.offsetHeight - first.offsetTop <= sc.clientHeight * 0.5;
   const pct = fits || max <= 0 ? 1 : Math.min(1, sc.scrollTop / max);
-  rEls.fill.style.width = (pct * 100) + '%';
+  rEls.fill.style.width = $('#readKnob').style.left = (pct * 100) + '%';
   rEls.pct.textContent = Math.round(pct * 100) + '%';
   const line = sc.scrollTop + sc.clientHeight * (pct >= 0.995 ? 0.75 : 0.3);
   let idx = -1;
@@ -1590,6 +1709,28 @@ rEls.scroll.addEventListener('scroll', () => {
 window.addEventListener('resize', () => { if (S.reading){ R.cur = -2; updateReadProgress(); if (LK.open) placeLookup(); } });
 $('#readBtn').onclick = enterReading;
 $('#exitRead').onclick = () => exitReading();
+(() => {
+  const el = $('#readSeek');
+  let raf = 0, lastX = 0, drag = false;
+  const apply = () => {
+    raf = 0;
+    const r = el.getBoundingClientRect(), sc = rEls.scroll;
+    const frac = Math.max(0, Math.min(1, (lastX - r.left) / r.width));
+    sc.scrollTop = frac * (sc.scrollHeight - sc.clientHeight);
+  };
+  el.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    closeLookup();
+    drag = true; el.classList.add('drag');
+    lastX = e.clientX; apply();
+  });
+  el.addEventListener('pointermove', e => { if (!drag) return; lastX = e.clientX; if (!raf) raf = requestAnimationFrame(apply); });
+  const end = () => { if (!drag) return; drag = false; el.classList.remove('drag'); if (raf){ cancelAnimationFrame(raf); apply(); } };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+})();
 rEls.tocBtn.onclick = toggleToc;
 $('#rSizeDown').onclick = () => setReadSize(S.rsize - 2);
 $('#rSizeUp').onclick = () => setReadSize(S.rsize + 2);
