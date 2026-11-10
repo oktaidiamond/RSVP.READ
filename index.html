@@ -1497,6 +1497,24 @@ function fxNums(s){
   return {text, n};
 }
 
+function fxPunct(s){
+  let n = 0;
+  const a = s.replace(/(\p{Ll}+)([.?!:])(\p{Lu}\p{Ll})/gu, (m, w, p, c, off, str) => {
+    if (str[off - 1] === '.' && w.length === 1) return m;
+    if (p === '.' && ABBR.test(str.slice(0, off + w.length + 1))) return m;
+    n++;
+    return w + p + ' ' + c;
+  });
+  const q = a.replace(/(\p{Ll}+)([.?!])(["'\u201d\u2019)\]]+)(\p{Lu}\p{Ll})/gu, (m, w, p, c, d, off, str) => {
+    if (str[off - 1] === '.' && w.length === 1) return m;
+    if (p === '.' && ABBR.test(str.slice(0, off + w.length + 1))) return m;
+    n++;
+    return w + p + c + ' ' + d;
+  });
+  const b = q.replace(/(\p{L}{2})([,;])(\p{L}{2})/gu, (m, w, p, c) => { n++; return w + p + ' ' + c; });
+  return {text:b, n};
+}
+
 async function fxClean(text, box, lines = null){
   if (!text.trim()) return null;
   status(box, {text:'Fixing spelling…', progress:0});
@@ -1511,12 +1529,15 @@ async function fxClean(text, box, lines = null){
   const run = s => {
     const a = fxApply(fxJoin(s, T).text, plan);
     const b = fxNums(a.text);
-    fixed += a.n + b.n;
-    return b.text;
+    const c = fxPunct(b.text);
+    fixed += a.n + b.n + c.n;
+    return c.text;
   };
   const ap = fxApply(joined, plan);
-  const nm = fxNums(ap.text);
-  fixed += ap.n + nm.n;
+  const nm0 = fxNums(ap.text);
+  const pu = fxPunct(nm0.text);
+  const nm = {text:pu.text};
+  fixed += ap.n + nm0.n + pu.n;
   const outLines = lines ? lines.map(l => ({...l, t:run(l.t)})) : null;
   status(box, {text:fixed ? `Fixed ${fmtNum(fixed)} word${fixed === 1 ? '' : 's'}` : 'Nothing needed fixing', progress:1, type:'ok'});
   return {text:nm.text, lines:outLines, fixed};
