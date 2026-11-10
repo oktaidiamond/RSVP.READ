@@ -248,7 +248,35 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .read-controls .icon-btn svg{width:15px;height:15px}
 .read-controls .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);min-width:46px;text-align:center}
 .read-controls .btn.on{border-color:var(--accent);color:var(--accent)}
-.exit-read{position:absolute;top:16px;right:16px;z-index:6}
+.pdf-sync{position:absolute;left:0;right:0;z-index:5;display:flex;justify-content:center;pointer-events:none}
+.pdf-sync .btn{pointer-events:auto;background:var(--surface2);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.pdf-sync.up{top:62px}
+.pdf-sync.down{bottom:150px}
+.pdf-sync.up .ic{transform:rotate(180deg)}
+body.pdf-mode.pdf-split .pdf-sync{right:var(--txw)}
+.read-top{position:absolute;top:16px;right:16px;z-index:6;display:flex;gap:8px;align-items:center}
+.read-dock::before{content:'';position:absolute;inset:-70px 0 0;background:linear-gradient(to bottom,transparent,var(--bg) 40%);opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
+body.pdf-mode .read-dock::before{opacity:1}
+.pdf-view{position:absolute;inset:0;overflow:auto;display:none;outline:none;padding:64px 16px 190px;scrollbar-width:none}
+.pdf-view::-webkit-scrollbar{display:none}
+body.pdf-mode .pdf-view{display:block}
+body.pdf-mode .read-scroll,body.pdf-mode #tocBtn,body.pdf-mode .read-controls .font-dd{display:none}
+:root{--txw:min(440px,40vw)}
+body.pdf-mode.pdf-split .read-scroll{display:block;left:auto;width:var(--txw);border-left:1px solid var(--border)}
+body.pdf-mode.pdf-split .read-scroll{top:56px}
+body.pdf-mode.pdf-split .read-col{font-size:15px}
+body.pdf-mode.pdf-split .pdf-view{right:var(--txw)}
+.tts-skip{display:none;width:34px;padding:0}
+body.pdf-mode.tts-active .tts-skip{display:inline-flex}
+@media (max-width:900px){
+  body.pdf-mode.pdf-split .read-scroll{left:0;width:auto;top:55%;border-left:0;border-top:1px solid var(--border)}
+  body.pdf-mode.pdf-split .pdf-view{right:0;bottom:45%}
+  body.pdf-mode.pdf-split .pdf-sync{right:0}
+  body.pdf-mode.pdf-split .pdf-sync.down{bottom:calc(45% + 12px)}
+}
+.pdf-page{margin:0 auto 14px;background:#fff;border-radius:3px;box-shadow:0 2px 14px rgba(0,0,0,.35);overflow:hidden}
+.pdf-page canvas{display:block;width:100%;height:100%}
+.recent-thumb{width:34px;height:46px;object-fit:cover;object-position:top;border-radius:4px;border:1px solid var(--border);background:#fff;flex:none}
 .ts.on{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 body.tts-active .ts{cursor:pointer;transition:background .12s;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 body.tts-active .ts:hover{background:color-mix(in srgb,var(--accent) 11%,transparent)}
@@ -504,7 +532,9 @@ body.focus .transport .play .ic{width:22px;height:22px}
           <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
           <div class="dd-list"></div>
         </div>
+        <button class="btn sm tts-skip" id="ttsBack" title="Back"><svg class="ic"><use href="#ic-sb"/></svg></button>
         <button class="btn sm tts-ui" id="ttsBtn"></button>
+        <button class="btn sm tts-skip" id="ttsFwd" title="Forward"><svg class="ic"><use href="#ic-sf"/></svg></button>
         <div class="dropdown tts-ui tts-on tts-dd tts-sp" id="ttsSpDd">
           <button class="dd-btn"><span class="tts-label">1x</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
           <div class="dd-list"></div>
@@ -520,7 +550,13 @@ body.focus .transport .play .ic{width:22px;height:22px}
       </div>
     </div>
   </div>
-  <button class="btn sm exit-read" id="exitRead"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
+  <div class="pdf-view" id="pdfView" tabindex="-1"></div>
+  <div class="pdf-sync" id="pdfSyncWrap" hidden><button class="btn sm" id="pdfSync"><svg class="ic"><use href="#ic-caret"/></svg>Jump to voice</button></div>
+  <div class="read-top">
+    <button class="btn sm" id="pdfTx" hidden>Transcript</button>
+    <button class="btn sm" id="pdfBtn" hidden>PDF view</button>
+    <button class="btn sm" id="exitRead"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
+  </div>
   <div class="hint hint-read" id="hintRead"></div>
 </div>
 <div class="lookup" id="lookup">
@@ -562,7 +598,7 @@ const S = {
   wpm:400, size:52, rsize:19, font:'DM Mono', text:'', title:'', focus:false, ticker:false,
   tx:0, textSpans:[], tickerSpans:[], prevIdx:-1, lines:null, docVersion:0, reading:false, dragging:false, dragFrac:0
 };
-const U = { text:'', name:'', cleaned:false, lines:null };
+const U = { text:'', name:'', cleaned:false, lines:null, pdfBytes:null };
 let pasteCleaned = false;
 
 const els = {
@@ -613,7 +649,7 @@ function fmtTime(ms){
 const fmtNum = n => n.toLocaleString();
 const base = () => 60000 / S.wpm;
 
-function loadText(text, {title, cleaned=false, lines=null} = {}){
+function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null, thumb=null} = {}){
   const paras = tokenize(text);
   const words = paras.flat();
   if (!words.length) return false;
@@ -628,7 +664,16 @@ function loadText(text, {title, cleaned=false, lines=null} = {}){
   els.stats.hidden = false;
   buildTextViews();
   showWord(0);
-  addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines});
+  if (!(S.pdf && pdfKey && S.pdf.key === pdfKey)){
+    if (pdf){
+      pdfKey = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      pdfPut(pdfKey, pdf);
+      pdfThumb(pdf).then(t => { if (t) setThumb(pdfKey, t); });
+      S.pdf = {key:pdfKey, bytes:pdf};
+    } else S.pdf = pdfKey ? {key:pdfKey, bytes:null} : null;
+  } else pdfKey = S.pdf.key;
+  updatePdfUI();
+  addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines, pdf:S.pdf ? S.pdf.key : null, thumb:S.pdf ? thumb : null});
   return true;
 }
 
@@ -1470,6 +1515,7 @@ async function handleFile(file){
   const box = $('#uploadStatus');
   $('#uploadActions').classList.remove('show');
   const name = file.name;
+  U.pdfBytes = null;
   const isPdf = /\.pdf$/i.test(name) || file.type === 'application/pdf';
   const isTxt = /\.txt$/i.test(name) || file.type === 'text/plain';
   if (!isPdf && !isTxt){ status(box, {text:'Only .txt and .pdf files are supported.', type:'err'}); return; }
@@ -1495,7 +1541,9 @@ async function extractPdf(file, box){
   if (!window.pdfjsLib) throw new Error('PDF library failed to load');
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   status(box, {text:'Opening PDF…', progress:0});
-  const data = new Uint8Array(await file.arrayBuffer());
+  const buf = await file.arrayBuffer();
+  U.pdfBytes = new Uint8Array(buf.slice(0));
+  const data = new Uint8Array(buf);
   const pdf = await pdfjsLib.getDocument({data, isEvalSupported:false, disableFontFace:true}).promise;
   const n = pdf.numPages;
   const pages = [], lines = [];
@@ -1592,7 +1640,7 @@ importScripts('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.2/worker.
   return out.join('\n\n');
 }
 
-$('#uploadLoad').onclick = () => { if (U.text) loadText(U.text, {title:U.name, cleaned:U.cleaned, lines:U.lines}); };
+$('#uploadLoad').onclick = () => { if (U.text) loadText(U.text, {title:U.name, cleaned:U.cleaned, lines:U.lines, pdf:U.pdfBytes}); };
 $('#uploadClean').onclick = async () => {
   const btns = [$('#uploadClean'), $('#uploadLoad')];
   btns.forEach(b => b.disabled = true);
@@ -1637,14 +1685,20 @@ function readRecent(){
   try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
 }
 function writeRecent(list){
-  while (list.length){
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); return; } catch { list.pop(); }
-  }
-  try { localStorage.removeItem(RECENT_KEY); } catch {}
+  const before = readRecent().map(e => e.pdf).filter(Boolean);
+  const commit = () => {
+    while (list.length){
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); return; } catch { list.pop(); }
+    }
+    try { localStorage.removeItem(RECENT_KEY); } catch {}
+  };
+  commit();
+  const keep = new Set(readRecent().map(e => e.pdf));
+  before.forEach(k => { if (!keep.has(k)) pdfDel(k); });
 }
-function addRecent({title, text, words, cleaned, lines}){
+function addRecent({title, text, words, cleaned, lines, pdf, thumb}){
   const list = readRecent().filter(e => e.text !== text);
-  list.unshift({id:Date.now().toString(36) + Math.random().toString(36).slice(2,6), title, text, words, cleaned, lines:lines || null, ts:Date.now()});
+  list.unshift({id:Date.now().toString(36) + Math.random().toString(36).slice(2,6), title, text, words, cleaned, lines:lines || null, pdf:pdf || null, thumb:thumb || null, ts:Date.now()});
   writeRecent(list.slice(0, RECENT_MAX));
   if ($('[data-panel="recent"]').classList.contains('active')) renderRecent();
 }
@@ -1665,8 +1719,8 @@ function renderRecent(){
   list.forEach(e => {
     const row = document.createElement('div');
     row.className = 'recent-item';
-    row.innerHTML = `<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div>${e.cleaned ? '' : '<button class="btn ai sm recent-clean">' + ic('ai') + ' Clean</button>'}<button class="del">${ic('x')}</button>`;
-    row.onclick = () => loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null});
+    row.innerHTML = `${e.thumb ? `<img class="recent-thumb" alt="" src="${e.thumb}">` : ''}<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div>${e.cleaned ? '' : '<button class="btn ai sm recent-clean">' + ic('ai') + ' Clean</button>'}<button class="del">${ic('x')}</button>`;
+    row.onclick = () => loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb});
     const cb = row.querySelector('.recent-clean');
     if (cb) cb.onclick = async ev => {
       ev.stopPropagation();
@@ -1684,7 +1738,7 @@ function renderRecent(){
         if (wasLoaded){
           const i = S.idx;
           const n = S.words.length;
-          loadText(out.text, {title:e.title, cleaned:true, lines:out.lines});
+          loadText(out.text, {title:e.title, cleaned:true, lines:out.lines, pdfKey:e.pdf, thumb:e.thumb});
           seek(Math.round(i / Math.max(1, n) * S.words.length));
         }
       }
@@ -1904,6 +1958,7 @@ function renderReading(){
 }
 
 function updateReadProgress(){
+  if (inPdf()) return;
   const sc = rEls.scroll;
   const max = sc.scrollHeight - sc.clientHeight;
   const first = R.blockEls[0], last = R.blockEls[R.blockEls.length - 1];
@@ -1939,6 +1994,289 @@ function keepReadAnchor(fn){
   updateReadProgress();
 }
 
+const PDF_FONTS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/';
+let pdfDBP = null;
+function pdfDB(){
+  if (!pdfDBP) pdfDBP = new Promise((res, rej) => {
+    const r = indexedDB.open('rsvp-pdf', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('pdf');
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return pdfDBP;
+}
+async function pdfStore(mode, fn){
+  const db = await pdfDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('pdf', mode);
+    const rq = fn(tx.objectStore('pdf'));
+    tx.oncomplete = () => res(rq && rq.result);
+    tx.onerror = tx.onabort = () => rej(tx.error);
+  });
+}
+const pdfPut = (k, b) => pdfStore('readwrite', s => s.put(b, k)).catch(() => {});
+const pdfGet = k => pdfStore('readonly', s => s.get(k)).catch(() => null);
+const pdfDel = k => pdfStore('readwrite', s => s.delete(k)).catch(() => {});
+
+function pdfLib(){
+  if (!window.pdfjsLib) throw new Error('PDF library failed to load');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return pdfjsLib;
+}
+
+async function pdfThumb(bytes){
+  try {
+    const doc = await pdfLib().getDocument({data:bytes.slice(), isEvalSupported:false, disableFontFace:true, standardFontDataUrl:PDF_FONTS}).promise;
+    const page = await doc.getPage(1);
+    const vp = page.getViewport({scale:84 / page.getViewport({scale:1}).width});
+    const c = document.createElement('canvas');
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    await page.render({canvasContext:g, viewport:vp}).promise;
+    doc.destroy();
+    return c.toDataURL('image/jpeg', 0.7);
+  } catch { return null; }
+}
+
+function setThumb(key, thumb){
+  const list = readRecent();
+  let hit = false;
+  list.forEach(e => { if (e.pdf === key){ e.thumb = thumb; hit = true; } });
+  if (!hit) return;
+  writeRecent(list);
+  if ($('[data-panel="recent"]').classList.contains('active')) renderRecent();
+}
+
+const PV = {doc:null, key:null, n:0, ratio:1.3, cur:1, cum:[0], io:null, drag:null, raf:0, zoom:1, zt:0};
+const pdfEl = $('#pdfView');
+const inPdf = () => document.body.classList.contains('pdf-mode');
+
+function updatePdfUI(){
+  $('#pdfBtn').hidden = !S.pdf;
+  if (!S.pdf && inPdf()) setPdfMode(false);
+}
+
+function pdfClose(){
+  if (PV.io) PV.io.disconnect();
+  PV.io = null;
+  if (PV.doc) PV.doc.destroy();
+  PV.doc = null; PV.key = null; PV.n = 0;
+  pdfEl.replaceChildren();
+}
+
+function pdfWidth(){
+  const avail = document.documentElement.clientWidth - 32 - (document.body.classList.contains('pdf-split') && document.documentElement.clientWidth > 900 ? Math.min(440, document.documentElement.clientWidth * 0.4) : 0);
+  return Math.round(Math.max(200, Math.min(780, avail)) * PV.zoom);
+}
+
+function pdfLayout(){
+  const w = pdfWidth();
+  [...pdfEl.children].forEach(d => { d.style.width = w + 'px'; d.style.height = Math.round(w * (+d.dataset.r || PV.ratio)) + 'px'; });
+  clearTimeout(PV.zt);
+  PV.zt = setTimeout(() => [...pdfEl.children].forEach(d => { pdfFree(d); PV.io.unobserve(d); PV.io.observe(d); }), 180);
+}
+
+function pdfZoom(z){
+  z = Math.max(0.5, Math.min(3, z));
+  $('#rSize').textContent = Math.round(z * 100) + '%';
+  if (!PV.doc || z === PV.zoom) return;
+  const at = pdfEl.scrollHeight ? pdfEl.scrollTop / pdfEl.scrollHeight : 0;
+  PV.zoom = z;
+  pdfLayout();
+  pdfEl.scrollTop = at * pdfEl.scrollHeight;
+  pdfProgress();
+}
+
+async function pdfRender(div){
+  if (div._done || div._busy || !PV.doc) return;
+  div._busy = true;
+  const tok = div._tok = (div._tok || 0) + 1;
+  try {
+    const page = await PV.doc.getPage(+div.dataset.p);
+    const w = div.clientWidth || pdfWidth();
+    const base = page.getViewport({scale:1});
+    const s = w / base.width;
+    const vp = page.getViewport({scale:s * Math.min(2, window.devicePixelRatio || 1)});
+    const c = document.createElement('canvas');
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    div.dataset.r = base.height / base.width;
+    div.style.height = Math.round(base.height * s) + 'px';
+    await page.render({canvasContext:c.getContext('2d'), viewport:vp}).promise;
+    if (div._tok === tok){ div.replaceChildren(c); div._done = true; }
+  } catch {}
+  div._busy = false;
+}
+
+function pdfFree(div){
+  div._tok = (div._tok || 0) + 1;
+  div._done = false;
+  div.replaceChildren();
+}
+
+function pdfPageWeights(){
+  const n = PV.n;
+  const w = new Array(n).fill(0);
+  const seen = new Set();
+  if (S.lines) S.lines.forEach(l => { if (l.p >= 1 && l.p <= n){ w[l.p - 1] += (l.t.match(/\S+/g) || []).length; seen.add(l.p); } });
+  const total = w.reduce((a, b) => a + b, 0);
+  const cum = [0];
+  const uniform = seen.size < 2 || !total;
+  for (let i = 0; i < n; i++) cum.push(cum[i] + (uniform ? 1 / n : w[i] / total));
+  return cum;
+}
+
+async function pdfOpen(){
+  if (!S.pdf) return false;
+  if (PV.doc && PV.key === S.pdf.key) return true;
+  pdfClose();
+  if (!S.pdf.bytes) S.pdf.bytes = await pdfGet(S.pdf.key);
+  if (!S.pdf.bytes){ S.pdf = null; updatePdfUI(); return false; }
+  const doc = await pdfLib().getDocument({data:S.pdf.bytes.slice(), isEvalSupported:false, disableFontFace:true, standardFontDataUrl:PDF_FONTS}).promise;
+  const first = await doc.getPage(1);
+  const v = first.getViewport({scale:1});
+  PV.doc = doc; PV.key = S.pdf.key; PV.n = doc.numPages; PV.ratio = v.height / v.width;
+  PV.cum = pdfPageWeights();
+  const w = pdfWidth();
+  const frag = document.createDocumentFragment();
+  for (let p = 1; p <= PV.n; p++){
+    const d = document.createElement('div');
+    d.className = 'pdf-page'; d.dataset.p = p;
+    d.style.width = w + 'px'; d.style.height = Math.round(w * PV.ratio) + 'px';
+    frag.appendChild(d);
+  }
+  pdfEl.appendChild(frag);
+  PV.io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? pdfRender(e.target) : pdfFree(e.target)), {root:pdfEl, rootMargin:'150% 0px'});
+  [...pdfEl.children].forEach(d => PV.io.observe(d));
+  return true;
+}
+
+function pdfPageEl(p){ return pdfEl.children[Math.max(0, Math.min(PV.n - 1, p - 1))]; }
+
+function pdfGoto(p, smooth){
+  const el = pdfPageEl(p);
+  if (el) pdfEl.scrollTo({top:el.offsetTop - 56, behavior:smooth && !reduceMotion() ? 'smooth' : 'auto'});
+}
+
+function pdfPageOf(frac){
+  let p = 1;
+  for (let i = 1; i <= PV.n; i++) if (PV.cum[i - 1] <= frac + 1e-9) p = i;
+  return p;
+}
+
+function pdfVoiceActive(){ return T.state === 'playing' || T.state === 'paused'; }
+
+function pdfVoiceFrac(){ return T.uwTotal ? (T.uw[Math.min(T.u, T.units.length - 1)] || 0) / T.uwTotal : 0; }
+
+function pdfPageAt(y){
+  const kids = pdfEl.children;
+  let lo = 0, hi = kids.length - 1;
+  while (lo < hi){ const m = (lo + hi + 1) >> 1; if (kids[m].offsetTop <= y) lo = m; else hi = m - 1; }
+  return lo + 1;
+}
+
+function pdfProgress(){
+  if (!inPdf() || !PV.doc) return;
+  const top = pdfEl.scrollTop + 64;
+  const cur = PV.cur = pdfPageAt(top + pdfEl.clientHeight * 0.25);
+  const voice = pdfVoiceActive();
+  const max = pdfEl.scrollHeight - pdfEl.clientHeight;
+  const frac = PV.drag != null ? PV.drag : voice ? T.u / Math.max(1, T.units.length) : (max > 0 ? Math.min(1, pdfEl.scrollTop / max) : 1);
+  rEls.fill.style.width = $('#readKnob').style.left = (frac * 100) + '%';
+  rEls.pct.textContent = Math.round(frac * 100) + '%';
+  rEls.chapter.textContent = `Page ${cur} of ${PV.n}`;
+  const vp = voice ? pdfPageOf(pdfVoiceFrac()) : 0;
+  const dir = !voice ? '' : vp < pdfPageAt(top) ? 'up' : vp > pdfPageAt(pdfEl.scrollTop + pdfEl.clientHeight - 150) ? 'down' : '';
+  const wrap = $('#pdfSyncWrap');
+  wrap.hidden = !dir;
+  wrap.className = 'pdf-sync ' + dir;
+}
+
+function pdfSeekPreview(frac){
+  PV.drag = frac;
+  if (!pdfVoiceActive()) pdfEl.scrollTop = frac * (pdfEl.scrollHeight - pdfEl.clientHeight);
+  pdfProgress();
+}
+
+function pdfSeekCommit(frac){
+  PV.drag = null;
+  if (pdfVoiceActive() && T.units.length) ttsJump(Math.min(T.units.length - 1, Math.floor(frac * T.units.length)), false, true);
+  pdfProgress();
+}
+
+function pdfFirstUnit(){
+  const f = PV.cum[PV.cur - 1] || 0;
+  for (let i = 0; i < T.units.length; i++) if (T.uwTotal && T.uw[i] / T.uwTotal >= f - 1e-9) return i;
+  return 0;
+}
+
+async function setPdfMode(on){
+  const btn = $('#pdfBtn');
+  if (!on){
+    const was = inPdf();
+    document.body.classList.remove('pdf-mode');
+    btn.textContent = 'PDF view';
+    btn.classList.remove('on');
+    $('#pdfSyncWrap').hidden = true;
+    $('#pdfTx').hidden = true;
+    $('#rSize').textContent = S.rsize + 'px';
+    PV.drag = null;
+    if (was){ R.cur = -2; updateReadProgress(); rEls.scroll.focus({preventScroll:true}); }
+    return;
+  }
+  if (!S.pdf) return;
+  btn.disabled = true;
+  btn.textContent = 'Opening…';
+  let ok = false;
+  const at = pdfVoiceActive() ? pdfVoiceFrac() : S.idx / Math.max(1, S.words.length);
+  try { ok = await pdfOpen(); } catch { ok = false; }
+  btn.disabled = false;
+  if (!ok){ btn.textContent = 'PDF view'; btn.hidden = !S.pdf; return; }
+  document.body.classList.add('pdf-mode');
+  btn.textContent = 'Text view';
+  btn.classList.add('on');
+  $('#pdfTx').hidden = !ttsOk();
+  $('#rSize').textContent = Math.round(PV.zoom * 100) + '%';
+  pdfGoto(pdfPageOf(at));
+  pdfEl.focus({preventScroll:true});
+  requestAnimationFrame(pdfProgress);
+}
+
+$('#pdfBtn').onclick = () => setPdfMode(!inPdf());
+$('#pdfSync').onclick = () => pdfGoto(pdfPageOf(pdfVoiceFrac()), true);
+$('#pdfTx').onclick = () => {
+  const on = document.body.classList.toggle('pdf-split');
+  $('#pdfTx').classList.toggle('on', on);
+  if (PV.doc) pdfLayout();
+  if (on && T.cur >= 0){
+    const el = T.sp[T.cur], sc = rEls.scroll, rs = el && el.getClientRects();
+    if (rs && rs.length) sc.scrollTo({top:sc.scrollTop + rs[0].top - sc.getBoundingClientRect().top - sc.clientHeight * 0.25});
+  }
+};
+const ttsSkip = d => {
+  if (!pdfVoiceActive() || !T.units.length) return;
+  ttsJump(Math.max(0, Math.min(T.units.length - 1, T.u + d)), false, false);
+};
+$('#ttsBack').onclick = () => ttsSkip(-1);
+$('#ttsFwd').onclick = () => ttsSkip(1);
+pdfEl.addEventListener('wheel', e => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  pdfZoom(PV.zoom * Math.exp(-e.deltaY * 0.01));
+}, {passive:false});
+let gz = 1;
+pdfEl.addEventListener('gesturestart', e => { e.preventDefault(); gz = PV.zoom; });
+pdfEl.addEventListener('gesturechange', e => { e.preventDefault(); pdfZoom(gz * e.scale); });
+pdfEl.addEventListener('scroll', () => {
+  if (PV.raf) return;
+  PV.raf = requestAnimationFrame(() => { PV.raf = 0; pdfProgress(); });
+});
+window.addEventListener('resize', () => {
+  if (!PV.doc) return;
+  pdfLayout();
+  pdfProgress();
+});
+
 function enterReading(){
   if (S.reading || S.focus) return;
   if (!S.words.length) return;
@@ -1948,6 +2286,7 @@ function enterReading(){
   S.reading = true;
   document.body.classList.add('read-mode');
   const h = $('#hintRead');
+  $('#pdfBtn').hidden = !S.pdf;
   h.textContent = 'Esc to exit' + (ttsOk() ? ' · Space to listen/pause' : '') + (R.heads.length ? ' · T for contents' : '');
   h.style.animation = 'none'; h.offsetHeight; h.style.animation = '';
   scrollReadToWord(S.idx);
@@ -1991,6 +2330,7 @@ function exitReading(keepFs){
   ttsStop();
   if (Math.abs(rEls.scroll.scrollTop - R.enterTop) > 2) seek(wordAtReadLine());
   S.reading = false;
+  setPdfMode(false);
   document.body.classList.remove('read-mode', 'toc-open');
   rEls.tocBtn.classList.remove('on');
   if (document.fullscreenElement && keepFs !== true) document.exitFullscreen().catch(()=>{});
@@ -1998,13 +2338,13 @@ function exitReading(keepFs){
 }
 
 function toggleToc(){
-  if (!R.heads.length) return;
+  if (!R.heads.length || inPdf()) return;
   const on = document.body.classList.toggle('toc-open');
   rEls.tocBtn.classList.toggle('on', on);
 }
 
 function readingKey(e){
-  const sc = rEls.scroll;
+  const sc = inPdf() ? pdfEl : rEls.scroll;
   const behavior = reduceMotion() ? 'auto' : 'smooth';
   switch (e.key){
     case 'ArrowDown': e.preventDefault(); sc.scrollBy({top:80, behavior}); break;
@@ -2033,10 +2373,12 @@ $('#exitRead').onclick = () => exitReading();
 (() => {
   const el = $('#readSeek');
   let raf = 0, lastX = 0, drag = false;
+  let frac = 0;
   const apply = () => {
     raf = 0;
     const r = el.getBoundingClientRect(), sc = rEls.scroll;
-    const frac = Math.max(0, Math.min(1, (lastX - r.left) / r.width));
+    frac = Math.max(0, Math.min(1, (lastX - r.left) / r.width));
+    if (inPdf()){ pdfSeekPreview(frac); return; }
     sc.scrollTop = frac * (sc.scrollHeight - sc.clientHeight);
   };
   el.addEventListener('pointerdown', e => {
@@ -2048,13 +2390,13 @@ $('#exitRead').onclick = () => exitReading();
     lastX = e.clientX; apply();
   });
   el.addEventListener('pointermove', e => { if (!drag) return; lastX = e.clientX; if (!raf) raf = requestAnimationFrame(apply); });
-  const end = () => { if (!drag) return; drag = false; el.classList.remove('drag'); if (raf){ cancelAnimationFrame(raf); apply(); } };
+  const end = () => { if (!drag) return; drag = false; el.classList.remove('drag'); if (raf){ cancelAnimationFrame(raf); apply(); } if (inPdf()) pdfSeekCommit(frac); };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
 })();
 rEls.tocBtn.onclick = toggleToc;
-$('#rSizeDown').onclick = () => setReadSize(S.rsize - 2);
-$('#rSizeUp').onclick = () => setReadSize(S.rsize + 2);
+$('#rSizeDown').onclick = () => inPdf() ? pdfZoom(PV.zoom / 1.15) : setReadSize(S.rsize - 2);
+$('#rSizeUp').onclick = () => inPdf() ? pdfZoom(PV.zoom * 1.15) : setReadSize(S.rsize + 2);
 
 const LK = {open:false, range:null, ctrl:null, text:'', ctx:'', id:0};
 const lkEls = {box:$('#lookup'), word:$('#lkWord'), dict:$('#lkDict'), ai:$('#lkAi'), explain:$('#lkExplain')};
@@ -2395,11 +2737,11 @@ const tEls = {btn:$('#ttsBtn')};
 function ttsReset(){
   ttsStop();
   T.sp = [...rEls.text.querySelectorAll('.ts')];
-  T.units = [];
+  T.units = []; T.uw = []; T.uwTotal = 0;
   T.sp.forEach((el, i) => {
     const t = el.textContent.replace(/\s+/g, ' ').trim();
     if (!/[\p{L}\p{N}]/u.test(t)) return;
-    chunkText(t).forEach(c => { c = c.trim(); if (/[\p{L}\p{N}]/u.test(c)) T.units.push({s:i, t:c}); });
+    chunkText(t).forEach(c => { c = c.trim(); if (/[\p{L}\p{N}]/u.test(c)){ T.units.push({s:i, t:c}); T.uw.push(T.uwTotal); T.uwTotal += (c.match(/\S+/g) || []).length; } });
   });
 }
 
@@ -2410,6 +2752,7 @@ function ttsUi(){
   b.innerHTML = T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`;
   b.classList.toggle('on', T.state !== 'idle');
   document.body.classList.toggle('tts-active', T.state !== 'idle');
+  pdfProgress();
 }
 
 async function gpuOk(){
@@ -2465,25 +2808,23 @@ function ttsWant(i){
   T.worker.postMessage({type:'gen', id:i, epoch:T.epoch, text:T.units[i].t, voice:T.voice, speed:1});
 }
 
-function ttsInView(el){
-  const r = el.getClientRects()[0];
-  if (!r) return false;
-  const v = rEls.scroll.getBoundingClientRect();
-  const dock = $('.read-dock-inner').offsetHeight + 18;
-  return r.top >= v.top + 24 && r.bottom <= v.bottom - dock;
-}
-
 function ttsMark(si){
   if (T.cur === si) return;
   const prev = T.sp[T.cur], el = T.sp[si];
-  const following = !prev || ttsInView(prev);
+  const sc = rEls.scroll, v = sc.getBoundingClientRect();
+  const vh = sc.clientHeight - ($('.read-dock-inner').offsetHeight + 18);
+  const pr = prev && prev.getClientRects()[0];
+  const following = !prev || !pr || (pr.top >= v.top && pr.top <= v.top + vh);
   if (prev) prev.classList.remove('on');
   T.cur = si;
   if (!el) return;
   el.classList.add('on');
-  if (following && !ttsInView(el)){
-    const sc = rEls.scroll, r = el.getClientRects()[0], v = sc.getBoundingClientRect();
-    sc.scrollTo({top:sc.scrollTop + (r.top - v.top) - sc.clientHeight * 0.3, behavior:reduceMotion() ? 'auto' : 'smooth'});
+  const rs = el.getClientRects();
+  if (!following || !rs.length) return;
+  const top = rs[0].top - v.top, bottom = rs[rs.length - 1].bottom - v.top;
+  const tall = bottom - top > vh * 0.6;
+  if (top > vh * 0.6 || bottom > vh || top < 24){
+    sc.scrollTo({top:sc.scrollTop + top - (tall ? 36 : vh * 0.25), behavior:reduceMotion() ? 'auto' : 'smooth'});
   }
 }
 
@@ -2491,6 +2832,7 @@ function ttsPlay(i){
   if (i >= T.units.length){ ttsStop(); return; }
   T.u = i;
   ttsTrim();
+  pdfProgress();
   ttsMark(T.units[i].s);
   ttsWant(i); ttsWant(i + 1); ttsWant(i + 2);
   const url = T.cache.get(i);
@@ -2505,6 +2847,7 @@ function ttsPlay(i){
 }
 
 function ttsFirstUnit(){
+  if (inPdf() && PV.doc) return pdfFirstUnit();
   const top = rEls.scroll.getBoundingClientRect().top;
   for (let i = 0; i < T.units.length; i++){
     const r = T.sp[T.units[i].s].getClientRects()[0];
@@ -2576,6 +2919,7 @@ function ttsJump(u, resume, clear){
   if (resume && T.state === 'paused') T.state = 'playing';
   ttsUi();
   if (T.state === 'playing') ttsPlay(u);
+  else if (T.units[u]) ttsMark(T.units[u].s);
 }
 
 function ttsRetune(){
