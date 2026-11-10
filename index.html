@@ -108,7 +108,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .dd-item{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:8px 10px;border-radius:7px;font-size:14px}
 .dd-item:hover{background:var(--surface2)}
 .dd-item.sel{color:var(--accent)}
-.dd-item .chk{font-size:11px;opacity:0}
+.dd-item .chk{font-size:8px;opacity:0}
 .dd-item.sel .chk{opacity:1}
 
 .sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;min-width:0}
@@ -249,6 +249,29 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .read-controls .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);min-width:46px;text-align:center}
 .read-controls .btn.on{border-color:var(--accent);color:var(--accent)}
 .exit-read{position:absolute;top:16px;right:16px;z-index:6}
+.ts.on{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+body.tts-active .ts{cursor:pointer;transition:background .12s;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+body.tts-active .ts:hover{background:color-mix(in srgb,var(--accent) 11%,transparent)}
+body.tts-active .ts.on:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.read-controls .dropdown{flex:0 0 168px;min-width:0}
+body.focus .focus-controls .dropdown{flex:0 0 168px;min-width:0}
+.read-controls .dropdown.tts-dd{flex:0 0 108px;min-width:0}
+.read-controls .dropdown.tts-sp{flex:0 0 78px}
+.tts-sp .dd-list{min-width:136px}
+.tts-sp .dd-item>span:first-child{white-space:nowrap}
+.tts-dd .dd-list{left:auto;right:0;min-width:100%;max-height:60vh;overflow-y:auto}
+.tts-dd:not(.tts-sp) .dd-list{min-width:150px}
+.dd-head{padding:8px 10px 3px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+#ttsBtn{width:112px}
+.sp-whole{font-weight:600}
+.sp-frac{color:var(--muted)}
+.sp-note{font-size:11px;color:var(--muted);margin-left:4px}
+.dd-item.sel .sp-frac,.dd-item.sel .sp-note{color:inherit}
+.tts-sp .dd-item{padding:6px 10px}
+#ttsBtn svg{width:14px;height:14px;flex:none}
+.tts-on{display:none!important}
+body.tts-active .dropdown.tts-on{display:block!important}
+body.no-tts .tts-ui{display:none!important}
 .toc{position:absolute;top:0;left:0;bottom:0;width:320px;max-width:86vw;background:var(--surface);border-right:1px solid var(--border);transform:translateX(-102%);transition:transform .3s cubic-bezier(.2,.7,.2,1);z-index:5;display:flex;flex-direction:column}
 body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 .toc-head{padding:20px 18px 12px;border-bottom:1px solid var(--border)}
@@ -275,6 +298,23 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 .lk-thinking{color:var(--accent2);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
 .lk-explain{margin-top:10px;width:100%;flex:none}
+body{-webkit-user-select:none;user-select:none}
+textarea,input,.read-col,.text-body,.lk-body,.lk-word{-webkit-user-select:text;user-select:text}
+.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.btn.sm .ic,.btn.ai .ic{width:14px;height:14px}
+.full{display:inline-flex;align-items:center;gap:6px}
+body.focus .ico{display:inline-flex;align-items:center}
+body.focus .transport .btn .ic{width:20px;height:20px}
+body.focus .transport .play .ic{width:22px;height:22px}
+.caret{display:inline-flex}
+.caret .ic{width:12px;height:12px}
+.drop-icon .ic{width:34px;height:34px;stroke-width:1.75}
+.status-x{display:inline-flex}
+.status-x .ic{width:13px;height:13px}
+.del{display:inline-flex;align-items:center;justify-content:center}
+.del .ic{width:14px;height:14px}
+.lk-thinking .ic{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
+.status.ok .status-text::before{content:'';display:inline-block;width:13px;height:13px;margin-right:6px;vertical-align:-2px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/contain no-repeat}
 @media (max-width:860px){
   .main{grid-template-columns:1fr}
   .tab-body{max-height:460px}
@@ -299,10 +339,27 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d0d0f'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23ff3b3b'/%3E%3C/svg%3E">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ic-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
+<symbol id="ic-pause" viewBox="0 0 24 24"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></symbol>
+<symbol id="ic-sb" viewBox="0 0 24 24"><path d="M17.971 4.285A2 2 0 0 1 21 6v12a2 2 0 0 1-3.029 1.715l-9.997-5.998a2 2 0 0 1-.003-3.432z"/><path d="M3 20V4"/></symbol>
+<symbol id="ic-sf" viewBox="0 0 24 24"><path d="M21 4v16"/><path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/></symbol>
+<symbol id="ic-replay" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></symbol>
+<symbol id="ic-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="ic-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="ic-focus" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+<symbol id="ic-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+<symbol id="ic-ai" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></symbol>
+<symbol id="ic-text" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></symbol>
+<symbol id="ic-caret" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="ic-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+<symbol id="ic-up" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></symbol>
+</defs></svg>
 <header class="fade-up">
   <h1>RSVP<span class="title-dot">.</span>READ</h1>
   <div class="header-actions">
-    <button class="icon-btn" id="focusBtn" title="Focus (F)">⛶</button>
+    <button class="icon-btn" id="focusBtn" title="Focus (F)"><svg class="ic"><use href="#ic-focus"/></svg></button>
     <button class="icon-btn" id="readBtn" title="Read (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4H9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5h-6A1.5 1.5 0 0 1 2 16z"/><path d="M22 5.5A1.5 1.5 0 0 0 20.5 4H15a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5h6a1.5 1.5 0 0 0 1.5-1.5z"/></svg></button>
     <button class="icon-btn theme-toggle" id="themeBtn" title="Theme">
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -335,19 +392,19 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 
       <div class="seek focus-seek" id="focusSeek"><div class="focus-bar" id="focusBar"><i id="focusFill"></i></div><span class="knob" id="focusKnob"></span></div>
       <div class="transport">
-        <button class="btn" id="back10"><span class="full">⏮ -10</span><span class="ico">⏮</span></button>
-        <button class="btn" id="back1">‹</button>
-        <button class="btn primary play" id="playBtn"><span class="full" id="playFull">▶ Play</span><span class="ico" id="playIco">▶</span></button>
-        <button class="btn" id="fwd1">›</button>
-        <button class="btn" id="fwd10"><span class="full">+10 ⏭</span><span class="ico">⏭</span></button>
+        <button class="btn" id="back10"><span class="full"><svg class="ic"><use href="#ic-sb"/></svg> -10</span><span class="ico"><svg class="ic"><use href="#ic-sb"/></svg></span></button>
+        <button class="btn" id="back1"><svg class="ic"><use href="#ic-l"/></svg></button>
+        <button class="btn primary play" id="playBtn"><span class="full" id="playFull"><svg class="ic"><use href="#ic-play"/></svg> Play</span><span class="ico" id="playIco"><svg class="ic"><use href="#ic-play"/></svg></span></button>
+        <button class="btn" id="fwd1"><svg class="ic"><use href="#ic-r"/></svg></button>
+        <button class="btn" id="fwd10"><span class="full">+10 <svg class="ic"><use href="#ic-sf"/></svg></span><span class="ico"><svg class="ic"><use href="#ic-sf"/></svg></span></button>
       </div>
 
       <div class="focus-controls">
-        <button class="btn sm" id="tickerBtn">≡ Text</button>
-        <span class="grp"><button class="btn sm" id="fWpmDown">−</button><span class="val" id="fWpm">400 WPM</span><button class="btn sm" id="fWpmUp">+</button></span>
+        <button class="btn sm" id="tickerBtn"><svg class="ic"><use href="#ic-text"/></svg> Text</button>
+        <span class="grp"><button class="btn sm" id="fWpmDown"><svg class="ic"><use href="#ic-minus"/></svg></button><span class="val" id="fWpm">400 WPM</span><button class="btn sm" id="fWpmUp"><svg class="ic"><use href="#ic-plus"/></svg></button></span>
         <span class="grp"><button class="btn sm" id="fSizeDown">A−</button><span class="val sz" id="fSize">52px</span><button class="btn sm" id="fSizeUp">A+</button></span>
         <div class="dropdown font-dd">
-          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret">▼</span></button>
+          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
           <div class="dd-list"></div>
         </div>
         <button class="icon-btn theme-toggle">
@@ -374,7 +431,7 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
         </div>
         <div class="divider"></div>
         <div class="dropdown font-dd">
-          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret">▼</span></button>
+          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
           <div class="dd-list"></div>
         </div>
       </div>
@@ -392,23 +449,23 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
     <div class="tab-body" id="tabBody">
       <div class="panel active" data-panel="paste">
         <textarea id="pasteArea" placeholder="Paste any text here…"></textarea>
-        <button class="btn primary block" id="pasteLoad">▶ Load Text into Reader</button>
-        <button class="btn ai block" id="pasteClean" hidden>✦ Clean with AI</button>
-        <div class="status" id="pasteStatus"><div class="status-row"><span class="status-text"></span><button class="status-x">✕</button></div><div class="status-bar"><i></i></div></div>
+        <button class="btn primary block" id="pasteLoad"><svg class="ic"><use href="#ic-play"/></svg> Load Text into Reader</button>
+        <button class="btn ai block" id="pasteClean" hidden><svg class="ic"><use href="#ic-ai"/></svg> Clean with AI</button>
+        <div class="status" id="pasteStatus"><div class="status-row"><span class="status-text"></span><button class="status-x"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
       </div>
 
       <div class="panel" data-panel="upload">
         <div class="drop" id="drop">
-          <div class="drop-icon">⇪</div>
+          <div class="drop-icon"><svg class="ic"><use href="#ic-up"/></svg></div>
           <p>Drop a file or click to browse</p>
           <small>.txt or .pdf — scanned PDFs use OCR</small>
           <input type="file" id="fileInput" accept=".txt,.pdf,text/plain,application/pdf" hidden>
         </div>
-        <div class="status" id="uploadStatus"><div class="status-row"><span class="status-text"></span><button class="status-x">✕</button></div><div class="status-bar"><i></i></div></div>
+        <div class="status" id="uploadStatus"><div class="status-row"><span class="status-text"></span><button class="status-x"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
         <div class="upload-actions" id="uploadActions">
           <span class="file-name" id="fileName"></span>
-          <button class="btn primary block" id="uploadLoad">▶ Load Text into Reader</button>
-          <button class="btn ai block" id="uploadClean">✦ Clean with AI</button>
+          <button class="btn primary block" id="uploadLoad"><svg class="ic"><use href="#ic-play"/></svg> Load Text into Reader</button>
+          <button class="btn ai block" id="uploadClean"><svg class="ic"><use href="#ic-ai"/></svg> Clean with AI</button>
         </div>
       </div>
 
@@ -421,14 +478,14 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 
       <div class="panel" data-panel="recent">
         <div class="recent-head"><span class="label">Recently loaded</span><button class="btn sm ghost" id="clearRecent">Clear all</button></div>
-        <div class="status" id="recentStatus"><div class="status-row"><span class="status-text"></span><button class="status-x">✕</button></div><div class="status-bar"><i></i></div></div>
+        <div class="status" id="recentStatus"><div class="status-row"><span class="status-text"></span><button class="status-x"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
         <div id="recentList" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
   </aside>
 </main>
 
-<button class="btn sm exit-focus" id="exitFocus">✕ Exit</button>
+<button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
 <div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause</div>
 <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
 <div class="reading" id="reading">
@@ -439,10 +496,19 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
       <div class="read-meta"><span id="readChapter"></span><span id="readPct">0%</span></div>
       <div class="seek" id="readSeek"><div class="read-bar"><i id="readFill"></i></div><span class="knob" id="readKnob"></span></div>
       <div class="read-controls">
-        <button class="btn sm" id="tocBtn">≡ Contents</button>
+        <button class="btn sm" id="tocBtn"><svg class="ic"><use href="#ic-text"/></svg> Contents</button>
         <span class="grp"><button class="btn sm" id="rSizeDown">A−</button><span class="val" id="rSize">19px</span><button class="btn sm" id="rSizeUp">A+</button></span>
         <div class="dropdown font-dd">
-          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret">▼</span></button>
+          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
+          <div class="dd-list"></div>
+        </div>
+        <button class="btn sm tts-ui" id="ttsBtn"></button>
+        <div class="dropdown tts-ui tts-on tts-dd tts-sp" id="ttsSpDd">
+          <button class="dd-btn"><span class="tts-label">1x</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
+          <div class="dd-list"></div>
+        </div>
+        <div class="dropdown tts-ui tts-on tts-dd" id="ttsDd">
+          <button class="dd-btn"><span class="tts-label">Heart</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
           <div class="dd-list"></div>
         </div>
         <button class="icon-btn theme-toggle">
@@ -452,14 +518,14 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
       </div>
     </div>
   </div>
-  <button class="btn sm exit-read" id="exitRead">✕ Exit</button>
+  <button class="btn sm exit-read" id="exitRead"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
   <div class="hint hint-read" id="hintRead"></div>
 </div>
 <div class="lookup" id="lookup">
   <div class="lk-head"><b class="lk-word" id="lkWord"></b><button class="btn sm" id="lkCopy">Copy</button></div>
   <div class="lk-body" id="lkBody"><div class="lk-dict" id="lkDict"></div>
   <div class="lk-ai" id="lkAi"></div></div>
-  <button class="btn ai sm lk-explain" id="lkExplain">✦ Ask AI</button>
+  <button class="btn ai sm lk-explain" id="lkExplain"><svg class="ic"><use href="#ic-ai"/></svg> Ask AI</button>
 </div>
 <div class="tooltip" id="tooltip"></div>
 
@@ -487,6 +553,7 @@ const SAMPLES = [
 ];
 
 
+const ic = n => `<svg class="ic"><use href="#ic-${n}"/></svg>`;
 const S = {
   words:[], paras:[], mult:[], prefix:[0], idx:0, playing:false, timer:null, done:false,
   wpm:400, size:52, rsize:19, font:'DM Mono', text:'', title:'', focus:false, ticker:false,
@@ -701,8 +768,9 @@ function seek(i){
 }
 
 function updatePlayUI(){
-  els.playFull.textContent = S.playing ? '⏸ Pause' : S.done ? '↺ Replay' : '▶ Play';
-  els.playIco.textContent = S.playing ? '⏸' : S.done ? '↺' : '▶';
+  const k = S.playing ? 'pause' : S.done ? 'replay' : 'play';
+  els.playFull.innerHTML = `${ic(k)} ${S.playing ? 'Pause' : S.done ? 'Replay' : 'Play'}`;
+  els.playIco.innerHTML = ic(k);
 }
 
 function setWpm(v){
@@ -736,8 +804,8 @@ function setFont(f){
   keepReadAnchor(() => {
     S.font = f;
     document.documentElement.style.setProperty('--word-font', `'${f}'`);
-    $$('.dd-label').forEach(l => { l.textContent = f; l.style.fontFamily = `'${f}',monospace`; });
-    $$('.dd-item').forEach(b => b.classList.toggle('sel', b.dataset.font === f));
+    $$('.font-dd .dd-label').forEach(l => { l.textContent = f; l.style.fontFamily = `'${f}',monospace`; });
+    $$('.font-dd .dd-item').forEach(b => b.classList.toggle('sel', b.dataset.font === f));
   });
   align();
   document.fonts.load(`500 ${S.size}px '${f}'`).then(() => { keepReadAnchor(() => {}); align(); }).catch(()=>{});
@@ -1138,7 +1206,7 @@ async function aiClean(text, box, lines = null){
   const parts = [];
   if (fixed) parts.push(`fixed ${fmtNum(fixed)} word${fixed === 1 ? '' : 's'}`);
   if (deleted.size + cuts) parts.push(`removed ${fmtNum(deleted.size + cuts)} junk piece${deleted.size + cuts === 1 ? '' : 's'}`);
-  status(box, {text:parts.length ? `✓ Cleaned — ${parts.join(', ')}` : '✓ Nothing needed fixing', progress:1, type:'ok'});
+  status(box, {text:parts.length ? `Cleaned — ${parts.join(', ')}` : 'Nothing needed fixing', progress:1, type:'ok'});
   return {text:out, lines:outLines};
 }
 
@@ -1178,7 +1246,7 @@ async function handleFile(file){
     if (!text || !text.trim()){ status(box, {text:'No text could be extracted from this file.', type:'err'}); return; }
     U.text = text; U.lines = lines; U.name = name.replace(/\.(pdf|txt)$/i,''); U.cleaned = false;
     $('#fileName').textContent = name;
-    status(box, {text:`✓ Extracted ${fmtNum(tokenize(text).flat().length)} words`, progress:1, type:'ok'});
+    status(box, {text:`Extracted ${fmtNum(tokenize(text).flat().length)} words`, progress:1, type:'ok'});
     $('#uploadActions').classList.add('show');
   } catch (e) {
     status(box, {text:`Couldn’t read file: ${(e && e.message) || e}`, type:'err'});
@@ -1349,7 +1417,7 @@ function renderRecent(){
   list.forEach(e => {
     const row = document.createElement('div');
     row.className = 'recent-item';
-    row.innerHTML = `<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div>${e.cleaned ? '' : '<button class="btn ai sm recent-clean">✦ Clean</button>'}<button class="del">✕</button>`;
+    row.innerHTML = `<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div>${e.cleaned ? '' : '<button class="btn ai sm recent-clean">' + ic('ai') + ' Clean</button>'}<button class="del">${ic('x')}</button>`;
     row.onclick = () => loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null});
     const cb = row.querySelector('.recent-clean');
     if (cb) cb.onclick = async ev => {
@@ -1558,8 +1626,10 @@ function renderReading(){
   const blocks = parseDoc(S.text, S.lines);
   const tags = {chapter:'h2', section:'h3', subtitle:'div', p:'p'};
   const cls = {chapter:'r-ch', section:'r-sec', subtitle:'r-sub', p:''};
-  rEls.text.innerHTML = blocks.map(b => `<${tags[b.type]}${cls[b.type] ? ` class="${cls[b.type]}"` : ''}>${esc(b.text)}</${tags[b.type]}>`).join('');
+  const wrap = ttsOk();
+  rEls.text.innerHTML = blocks.map(b => `<${tags[b.type]}${cls[b.type] ? ` class="${cls[b.type]}"` : ''}>${wrap ? splitSentences(b.text).map(x => `<span class="ts">${esc(x)}</span>`).join('') : esc(b.text)}</${tags[b.type]}>`).join('');
   R.blockEls = [...rEls.text.children];
+  ttsReset();
   R.starts = [0];
   blocks.forEach(b => R.starts.push(R.starts[R.starts.length - 1] + (b.text.match(/\S+/g) || []).length));
   R.wtotal = R.starts[R.starts.length - 1];
@@ -1630,7 +1700,7 @@ function enterReading(){
   S.reading = true;
   document.body.classList.add('read-mode');
   const h = $('#hintRead');
-  h.textContent = 'Esc to exit · Space to page down' + (R.heads.length ? ' · T for contents' : '');
+  h.textContent = 'Esc to exit · Space to page down' + (R.heads.length ? ' · T for contents' : '') + (ttsOk() ? ' · L to listen' : '');
   h.style.animation = 'none'; h.offsetHeight; h.style.animation = '';
   scrollReadToWord(S.idx);
   const req = document.documentElement.requestFullscreen;
@@ -1670,6 +1740,7 @@ function wordAtReadLine(){
 function exitReading(keepFs){
   if (!S.reading) return;
   closeLookup();
+  ttsStop();
   if (Math.abs(rEls.scroll.scrollTop - R.enterTop) > 2) seek(wordAtReadLine());
   S.reading = false;
   document.body.classList.remove('read-mode', 'toc-open');
@@ -1696,6 +1767,7 @@ function readingKey(e){
       sc.scrollBy({top:(e.shiftKey ? -1 : 1) * sc.clientHeight * 0.85, behavior});
       break;
     case 't': case 'T': toggleToc(); break;
+    case 'l': case 'L': if (ttsOk()) ttsToggle(); break;
     case 'r': case 'R': exitReading(); break;
     case 'f': case 'F': exitReading(true); enterFocus(); break;
     case 'Escape': LK.open ? closeLookup() : exitReading(); break;
@@ -1942,7 +2014,7 @@ ${ctx}
 async function explainSelection(){
   const id = LK.id;
   lkEls.explain.hidden = true;
-  lkEls.ai.innerHTML = '<span class="lk-thinking">✦ Thinking…</span>';
+  lkEls.ai.innerHTML = '<span class="lk-thinking">' + ic('ai') + ' Thinking…</span>';
   placeLookup();
   const sample = await getSample();
   if (id !== LK.id) return;
@@ -1981,7 +2053,339 @@ lkEls.box.addEventListener('mousedown', e => e.preventDefault());
 lkEls.explain.onclick = explainSelection;
 $('#lkCopy').onclick = () => copyText(LK.text, $('#lkCopy'));
 
-const checkAI = () => document.body.classList.toggle('no-ai', !(window.claude && typeof window.claude.use === 'function'));
+const ttsOk = () => !(window.claude && typeof window.claude.use === 'function') && !/claudeusercontent\.com$/i.test(location.hostname) && !!(window.Worker && window.Audio);
+
+const TTS_VOICES = [['af_bella','Bella','US · Female'],['af_heart','Heart','US · Female'],['af_nicole','Nicole','US · Female'],['am_michael','Michael','US · Male'],['am_puck','Puck','US · Male'],['bf_emma','Emma','UK · Female'],['bm_fable','Fable','UK · Male']];
+const TTS_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3];
+const TTS_URLS = ['https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm', 'https://esm.sh/kokoro-js@1.2.1'];
+const TTS_WORKER = `
+const URLS = ${JSON.stringify(TTS_URLS)};
+let tts = null, MOD = null, DEV = 'wasm', latest = 0, queue = Promise.resolve();
+const files = {};
+self.onmessage = e => {
+  const m = e.data;
+  if (m.type === 'epoch'){ latest = m.epoch; return; }
+  if (m.type === 'load'){ load(m.gpu); return; }
+  if (m.type === 'gen'){ latest = Math.max(latest, m.epoch); queue = queue.then(() => gen(m)); }
+};
+async function load(gpu){
+  try {
+    let mod = null;
+    for (const u of URLS){ try { mod = await import(u); break; } catch (err) {} }
+    if (!mod) throw new Error('import');
+    MOD = mod;
+    const tries = gpu ? [['webgpu','fp32'], ['wasm','q8']] : [['wasm','q8']];
+    for (const [device, dtype] of tries){
+      try { tts = await open(device, dtype); DEV = device; break; } catch (err) { tts = null; }
+    }
+    if (!tts) throw new Error('model');
+    postMessage({type:'ready'});
+  } catch (err) { postMessage({type:'error'}); }
+}
+function open(device, dtype){
+  for (const k in files) delete files[k];
+  return MOD.KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
+    dtype, device,
+    progress_callback: p => {
+      if (!p || p.status !== 'progress' || !p.total) return;
+      files[p.file] = {l:p.loaded, t:p.total};
+      let l = 0, t = 0;
+      for (const k in files){ l += files[k].l; t += files[k].t; }
+      postMessage({type:'progress', loaded:l, total:t});
+    }
+  });
+}
+async function gen(m){
+  if (m.epoch < latest) return;
+  try {
+    let a;
+    try { a = await tts.generate(m.text, {voice:m.voice, speed:m.speed}); }
+    catch (err) {
+      if (DEV !== 'webgpu') throw err;
+      tts = await open('wasm', 'q8'); DEV = 'wasm';
+      a = await tts.generate(m.text, {voice:m.voice, speed:m.speed});
+    }
+    const s = a.audio;
+    postMessage({type:'audio', id:m.id, epoch:m.epoch, voice:m.voice, samples:s, rate:a.sampling_rate}, [s.buffer]);
+  } catch (err) { postMessage({type:'fail', id:m.id, epoch:m.epoch}); }
+}
+`;
+const SENT_SEG = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('en', {granularity:'sentence'}) : null;
+
+const ABBR = /(?:\b(?:Mr|Mrs|Ms|Dr|St|Prof|Sr|Jr|vs|Mt|Gen|Col|Capt|Lt|Sgt|Rev|Hon|Fig|Inc|Ltd|Co|No)|\b[A-Z])\.\s*$/;
+
+function splitSentences(t){
+  const raw = SENT_SEG ? [...SENT_SEG.segment(t)].map(x => x.segment) : t.match(/[^.!?…]+[.!?…]*['"’”)\]]*\s*|[\s\S]/g) || [t];
+  const out = [];
+  let carry = '';
+  for (const x of raw){
+    carry += x;
+    if (ABBR.test(carry)) continue;
+    out.push(carry);
+    carry = '';
+  }
+  if (carry) out.push(carry);
+  return out;
+}
+
+function chunkText(t, max = 240){
+  const out = [];
+  while (t.length > max){
+    let k = Math.max(t.lastIndexOf(', ', max), t.lastIndexOf('; ', max), t.lastIndexOf(': ', max));
+    if (k < max * 0.4) k = t.lastIndexOf(' ', max);
+    if (k <= 0) k = max;
+    out.push(t.slice(0, k + 1));
+    t = t.slice(k + 1);
+  }
+  out.push(t);
+  return out;
+}
+
+const T = {state:'idle', worker:null, ready:null, sp:[], units:[], u:0, src:null, waiting:-1, cache:new Map(), asked:new Set(), epoch:0, pct:0, cur:-1, voice:'af_heart', speed:1};
+const tEls = {btn:$('#ttsBtn')};
+
+function ttsReset(){
+  ttsStop();
+  T.sp = [...rEls.text.querySelectorAll('.ts')];
+  T.units = [];
+  T.sp.forEach((el, i) => {
+    const t = el.textContent.replace(/\s+/g, ' ').trim();
+    if (!/[\p{L}\p{N}]/u.test(t)) return;
+    chunkText(t).forEach(c => { c = c.trim(); if (/[\p{L}\p{N}]/u.test(c)) T.units.push({s:i, t:c}); });
+  });
+}
+
+const TTS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
+
+function ttsUi(){
+  const b = tEls.btn;
+  b.innerHTML = T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`;
+  b.classList.toggle('on', T.state !== 'idle');
+  document.body.classList.toggle('tts-active', T.state !== 'idle');
+}
+
+async function gpuOk(){
+  try { return !!(navigator.gpu && await navigator.gpu.requestAdapter()); } catch { return false; }
+}
+
+function ttsWorker(){
+  if (T.ready) return T.ready;
+  T.ready = new Promise((res, rej) => {
+    const w = new Worker(URL.createObjectURL(new Blob([TTS_WORKER], {type:'text/javascript'})));
+    T.worker = w;
+    w.onmessage = e => {
+      const m = e.data;
+      if (m.type === 'progress'){ T.pct = Math.min(99, Math.floor(m.loaded / m.total * 100)); if (T.state === 'loading') ttsUi(); }
+      else if (m.type === 'ready') res();
+      else if (m.type === 'error'){ T.ready = null; T.worker = null; w.terminate(); rej(new Error('load')); }
+      else if (m.type === 'audio') ttsGot(m);
+      else if (m.type === 'fail' && m.epoch === T.epoch){ T.asked.delete(m.id); }
+    };
+    w.onerror = () => { T.ready = null; T.worker = null; rej(new Error('load')); };
+    gpuOk().then(gpu => w.postMessage({type:'load', gpu}));
+  });
+  return T.ready;
+}
+
+function wavUrl(samples, rate){
+  const n = samples.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const str = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  str(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++){ const x = Math.max(-1, Math.min(1, samples[i])); v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true); }
+  return URL.createObjectURL(new Blob([buf], {type:'audio/wav'}));
+}
+
+function ttsTrim(){
+  T.cache.forEach((url, id) => {
+    if (id < T.u - 10 || id > T.u + 3){ URL.revokeObjectURL(url); T.cache.delete(id); }
+  });
+}
+
+function ttsGot(m){
+  if (m.voice !== T.voice || T.state === 'idle') return;
+  T.cache.set(m.id, wavUrl(m.samples, m.rate));
+  ttsTrim();
+  if (T.waiting === m.id && T.state === 'playing') ttsPlay(m.id);
+}
+
+function ttsWant(i){
+  if (i < 0 || i >= T.units.length || T.cache.has(i) || T.asked.has(i)) return;
+  T.asked.add(i);
+  T.worker.postMessage({type:'gen', id:i, epoch:T.epoch, text:T.units[i].t, voice:T.voice, speed:1});
+}
+
+function ttsInView(el){
+  const r = el.getClientRects()[0];
+  if (!r) return false;
+  const v = rEls.scroll.getBoundingClientRect();
+  const dock = $('.read-dock-inner').offsetHeight + 18;
+  return r.top >= v.top + 24 && r.bottom <= v.bottom - dock;
+}
+
+function ttsMark(si){
+  if (T.cur === si) return;
+  const prev = T.sp[T.cur], el = T.sp[si];
+  const following = !prev || ttsInView(prev);
+  if (prev) prev.classList.remove('on');
+  T.cur = si;
+  if (!el) return;
+  el.classList.add('on');
+  if (following && !ttsInView(el)){
+    const sc = rEls.scroll, r = el.getClientRects()[0], v = sc.getBoundingClientRect();
+    sc.scrollTo({top:sc.scrollTop + (r.top - v.top) - sc.clientHeight * 0.3, behavior:reduceMotion() ? 'auto' : 'smooth'});
+  }
+}
+
+function ttsPlay(i){
+  if (i >= T.units.length){ ttsStop(); return; }
+  T.u = i;
+  ttsTrim();
+  ttsMark(T.units[i].s);
+  ttsWant(i); ttsWant(i + 1); ttsWant(i + 2);
+  const url = T.cache.get(i);
+  if (!url){ T.waiting = i; return; }
+  T.waiting = -1;
+  const a = new Audio(url);
+  a.preservesPitch = true;
+  a.playbackRate = T.speed;
+  a.onended = () => { if (T.src !== a) return; T.src = null; ttsPlay(i + 1); };
+  T.src = a;
+  a.play().catch(() => {});
+}
+
+function ttsFirstUnit(){
+  const top = rEls.scroll.getBoundingClientRect().top;
+  for (let i = 0; i < T.units.length; i++){
+    const r = T.sp[T.units[i].s].getClientRects()[0];
+    if (r && r.top >= top) return i;
+  }
+  return 0;
+}
+
+async function ttsStart(){
+  if (T.state !== 'idle' || !T.units.length) return;
+  T.u = ttsFirstUnit();
+  T.state = 'loading';
+  ttsUi();
+  try { await ttsWorker(); } catch { ttsStop(); return; }
+  if (T.state !== 'loading') return;
+  T.state = 'playing';
+  ttsUi();
+  ttsPlay(T.u);
+}
+
+function ttsStop(){
+  const was = T.state;
+  T.state = 'idle';
+  T.epoch++;
+  if (T.worker) T.worker.postMessage({type:'epoch', epoch:T.epoch});
+  if (T.src){ T.src.onended = null; T.src.pause(); T.src = null; }
+  T.cache.forEach(u => URL.revokeObjectURL(u));
+  T.cache.clear(); T.asked.clear(); T.waiting = -1;
+  if (T.sp[T.cur]) T.sp[T.cur].classList.remove('on');
+  T.cur = -1;
+  if (was !== 'idle' || document.body.classList.contains('tts-active')) ttsUi();
+}
+
+function ttsPause(){
+  if (T.state !== 'playing') return;
+  T.state = 'paused';
+  if (T.src) T.src.pause();
+  ttsUi();
+}
+
+function ttsResume(){
+  if (T.state !== 'paused') return;
+  T.state = 'playing';
+  ttsUi();
+  if (T.src) T.src.play().catch(() => {});
+  else ttsPlay(T.u);
+}
+
+function ttsToggle(){
+  if (T.state === 'idle') ttsStart();
+  else if (T.state === 'loading') ttsStop();
+  else if (T.state === 'playing') ttsPause();
+  else ttsResume();
+}
+
+function ttsSpeed(){
+  ttsUi();
+  if (T.src) T.src.playbackRate = T.speed;
+}
+
+function ttsJump(u, resume, clear){
+  if (T.state !== 'playing' && T.state !== 'paused') return;
+  T.u = u;
+  T.epoch++;
+  T.worker.postMessage({type:'epoch', epoch:T.epoch});
+  if (T.src){ T.src.onended = null; T.src.pause(); T.src = null; }
+  if (clear){ T.cache.forEach(x => URL.revokeObjectURL(x)); T.cache.clear(); }
+  T.asked.clear(); T.waiting = -1;
+  if (resume && T.state === 'paused') T.state = 'playing';
+  ttsUi();
+  if (T.state === 'playing') ttsPlay(u);
+}
+
+function ttsRetune(){
+  const s = T.units[T.u] && T.units[T.u].s;
+  let u = T.u;
+  while (u > 0 && T.units[u - 1].s === s) u--;
+  ttsJump(u, false, true);
+}
+
+let ttsClick = 0;
+rEls.text.addEventListener('click', e => {
+  if (T.state !== 'playing' && T.state !== 'paused') return;
+  const sp = e.target.closest && e.target.closest('.ts');
+  clearTimeout(ttsClick);
+  if (!sp || e.detail > 1) return;
+  ttsClick = setTimeout(() => {
+    if (String(window.getSelection())) return;
+    const si = T.sp.indexOf(sp);
+    const u = T.units.findIndex(x => x.s >= si);
+    if (u >= 0) ttsJump(u, true, false);
+  }, 260);
+});
+tEls.btn.onclick = ttsToggle;
+function ttsDropdown(dd, items, get, set){
+  const list = dd.querySelector('.dd-list');
+  const label = dd.querySelector('.tts-label');
+  const sync = () => {
+    const cur = items.find(x => x.v === get());
+    label.textContent = cur.label;
+    [...list.querySelectorAll('.dd-item')].forEach((b, i) => b.classList.toggle('sel', b.dataset.i === String(items.indexOf(cur))));
+  };
+  let group = null;
+  items.forEach((x, i) => {
+    if (x.group && x.group !== group){
+      group = x.group;
+      const h = document.createElement('div');
+      h.className = 'dd-head'; h.textContent = group;
+      list.appendChild(h);
+    }
+    const b = document.createElement('button');
+    b.className = 'dd-item'; b.dataset.i = i; b.dataset.v = x.v;
+    b.innerHTML = `<span>${x.html || x.label}</span><span class="chk">●</span>`;
+    b.onclick = () => { set(x.v); sync(); dd.classList.remove('open'); };
+    list.appendChild(b);
+  });
+  dd.querySelector('.dd-btn').onclick = e => {
+    e.stopPropagation();
+    $$('.tts-dd').forEach(o => { if (o !== dd) o.classList.remove('open'); });
+    dd.classList.toggle('open');
+  };
+  document.addEventListener('click', e => { if (!dd.contains(e.target)) dd.classList.remove('open'); });
+  sync();
+}
+ttsDropdown($('#ttsDd'), TTS_VOICES.map(v => ({v:v[0], label:v[1], group:v[2]})), () => T.voice, v => { T.voice = v; ttsRetune(); });
+ttsDropdown($('#ttsSpDd'), [...TTS_SPEEDS].reverse().map(v => ({v, label:v + 'x', html:Number.isInteger(v) ? `<span class="sp-whole">${v}x</span>${v === 1 ? ' <span class="sp-note">Normal</span>' : ''}` : `<span class="sp-frac">${v}x</span>`})), () => T.speed, v => { T.speed = v; ttsSpeed(); });
+ttsUi();
+
+const checkAI = () => { document.body.classList.toggle('no-ai', !(window.claude && typeof window.claude.use === 'function')); document.body.classList.toggle('no-tts', !ttsOk()); };
 checkAI();
 addEventListener('load', checkAI);
 setWpm(400);
