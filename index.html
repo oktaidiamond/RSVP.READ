@@ -57,7 +57,8 @@ body.light-mode .moon{display:none}
 .midline{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--border);opacity:.6;pointer-events:none}
 .word{position:absolute;left:0;top:50%;white-space:pre;font-family:var(--word-font),monospace;font-size:var(--word-size);font-weight:500;line-height:1;transform:translate(0,-50%);letter-spacing:0}
 .word .orp{color:var(--accent)}
-.placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px}
+.placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:15px}
+.ph-ic{width:15px;height:15px}
 
 .progress-meta{display:flex;justify-content:space-between;margin-bottom:8px}
 .progress-meta span{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)}
@@ -203,6 +204,8 @@ body.focus .focus-bar i,.focus-bar i{display:block;height:100%;width:0;backgroun
 body.focus .focus-controls{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;transition:opacity .3s ease}
 body.focus .focus-controls .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);min-width:70px;text-align:center}
 body.focus .exit-focus{display:inline-flex;position:fixed;top:16px;right:16px;z-index:50}
+.fs-focus{display:none}
+body.focus .fs-focus{display:inline-flex;position:fixed;top:16px;left:16px;z-index:50}
 .hint{position:fixed;top:22px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12.5px;pointer-events:none;white-space:nowrap;z-index:55}
 body.focus .hint-focus,body.read-mode .hint-read{display:block;animation:hintOut 3.5s ease forwards}
 body.focus.ticker-on .stage{height:34vh;min-height:180px}
@@ -251,13 +254,14 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .pdf-sync{position:absolute;left:0;right:0;z-index:5;display:flex;justify-content:center;pointer-events:none}
 .pdf-sync .btn{pointer-events:auto;background:var(--surface2);box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .pdf-sync.up{top:62px}
-.pdf-sync.down{bottom:150px}
+.pdf-sync.down{bottom:118px}
 .pdf-sync.up .ic{transform:rotate(180deg)}
 body.pdf-mode.pdf-split .pdf-sync{right:var(--txw)}
+.read-fs{position:absolute;top:16px;left:16px;z-index:6}
+body.is-fs .read-fs,body.is-fs .fs-focus{display:none!important}
 .read-top{position:absolute;top:16px;right:16px;z-index:6;display:flex;gap:8px;align-items:center}
-.read-dock::before{content:'';position:absolute;inset:-70px 0 0;background:linear-gradient(to bottom,transparent,var(--bg) 40%);opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
-body.pdf-mode .read-dock::before{opacity:1}
-.pdf-view{position:absolute;inset:0;overflow:auto;display:none;outline:none;padding:64px 16px 190px;scrollbar-width:none}
+.read-dock::before{content:'';position:absolute;inset:-28px 0 0;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 6%,transparent) 20%,color-mix(in srgb,var(--bg) 22%,transparent) 45%,color-mix(in srgb,var(--bg) 50%,transparent) 70%,color-mix(in srgb,var(--bg) 72%,transparent));opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
+.pdf-view{position:absolute;inset:0 0 var(--dockh,104px);overflow:auto;display:none;outline:none;padding:64px 16px 24px;scrollbar-width:none}
 .pdf-view::-webkit-scrollbar{display:none}
 body.pdf-mode .pdf-view{display:block}
 body.pdf-mode .read-scroll,body.pdf-mode #tocBtn,body.pdf-mode .read-controls .font-dd{display:none}
@@ -302,7 +306,7 @@ body.tts-active .dropdown.tts-on{display:block!important}
 body.no-tts .tts-ui{display:none!important}
 .toc{position:absolute;top:0;left:0;bottom:0;width:320px;max-width:86vw;background:var(--surface);border-right:1px solid var(--border);transform:translateX(-102%);transition:transform .3s cubic-bezier(.2,.7,.2,1);z-index:5;display:flex;flex-direction:column}
 body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
-.toc-head{padding:20px 18px 12px;border-bottom:1px solid var(--border)}
+.toc-head{padding:68px 18px 12px;border-bottom:1px solid var(--border)}
 .toc-list{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:2px}
 .toc-item{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:13.5px;line-height:1.35;transition:background .15s,color .15s,transform .12s}
 .toc-item.l2{padding-left:26px;font-size:12.5px;color:var(--muted)}
@@ -374,6 +378,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
 <symbol id="ic-sf" viewBox="0 0 24 24"><path d="M21 4v16"/><path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/></symbol>
 <symbol id="ic-replay" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></symbol>
 <symbol id="ic-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
 <symbol id="ic-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 <symbol id="ic-focus" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
 <symbol id="ic-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
@@ -404,7 +409,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
         <div class="guide" id="guide"></div>
         <div class="dot"></div>
         <div class="word" id="word"><span id="wPre"></span><span class="orp" id="wOrp"></span><span id="wPost"></span></div>
-        <div class="placeholder" id="placeholder">Load text to begin reading →</div>
+        <div class="placeholder" id="placeholder">Load text to begin reading <svg class="ic ph-ic"><use href="#ic-arrow"/></svg></div>
       </div>
 
       <div class="progress">
@@ -515,6 +520,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
   </aside>
 </main>
 
+<button class="btn sm fs-focus" id="fsFocus" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
 <button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
 <div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause</div>
 <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
@@ -552,6 +558,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
   </div>
   <div class="pdf-view" id="pdfView" tabindex="-1"></div>
   <div class="pdf-sync" id="pdfSyncWrap" hidden><button class="btn sm" id="pdfSync"><svg class="ic"><use href="#ic-caret"/></svg>Jump to voice</button></div>
+  <button class="btn sm read-fs" id="fsBtn" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
   <div class="read-top">
     <button class="btn sm" id="pdfTx" hidden>Transcript</button>
     <button class="btn sm" id="pdfBtn" hidden>PDF view</button>
@@ -649,7 +656,7 @@ function fmtTime(ms){
 const fmtNum = n => n.toLocaleString();
 const base = () => 60000 / S.wpm;
 
-function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null, thumb=null} = {}){
+function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null, thumb=null, pos=0, view=''} = {}){
   const paras = tokenize(text);
   const words = paras.flat();
   if (!words.length) return false;
@@ -672,8 +679,10 @@ function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null
       S.pdf = {key:pdfKey, bytes:pdf};
     } else S.pdf = pdfKey ? {key:pdfKey, bytes:null} : null;
   } else pdfKey = S.pdf.key;
+  S.pdfView = view === 'pdf' && !!S.pdf;
   updatePdfUI();
-  addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines, pdf:S.pdf ? S.pdf.key : null, thumb:S.pdf ? thumb : null});
+  addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines, pdf:S.pdf ? S.pdf.key : null, thumb:S.pdf ? thumb : null, pos, view:S.pdfView ? 'pdf' : ''});
+  if (pos > 0) seek(Math.min(words.length - 1, Math.round(pos * words.length)));
   return true;
 }
 
@@ -782,7 +791,7 @@ function pause(){
   updatePlayUI();
 }
 
-function toggle(){ S.playing ? pause() : play(); }
+function toggle(){ if (S.playing){ pause(); savePos(); } else play(); }
 
 function schedule(){
   clearTimeout(S.timer);
@@ -956,6 +965,7 @@ function enterFocus(){
 function exitFocus(keepFs){
   if (!S.focus) return;
   S.focus = false;
+  savePos();
   document.body.classList.remove('focus');
   if (document.fullscreenElement && keepFs !== true) document.exitFullscreen().catch(()=>{});
   requestAnimationFrame(align);
@@ -985,11 +995,30 @@ $('#focusBtn').onclick = enterFocus;
 $('#exitFocus').onclick = () => exitFocus();
 $('#tickerBtn').onclick = () => setTicker(!S.ticker);
 els.stage.addEventListener('transitionend', e => { if (e.target === els.stage && S.focus) recenterTicker(true); });
+function toggleFs(){
+  if (document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+}
 document.addEventListener('fullscreenchange', () => {
-  if (document.fullscreenElement) return;
-  if (S.focus) exitFocus();
-  if (S.reading) exitReading();
+  document.body.classList.toggle('is-fs', !!document.fullscreenElement);
 });
+$('#fsBtn').onclick = toggleFs;
+$('#fsFocus').onclick = toggleFs;
+
+function savePos(){
+  if (!S.text || !S.words.length) return;
+  const list = readRecent();
+  const e = list.find(x => x.text === S.text);
+  if (!e) return;
+  const idx = S.reading ? Math.min(S.words.length - 1, readWordIdx()) : S.idx;
+  const pos = S.done ? 0 : +(idx / S.words.length).toFixed(4);
+  const view = S.pdfView ? 'pdf' : '';
+  if (e.pos === pos && (e.view || '') === view) return;
+  e.pos = pos;
+  if (view) e.view = view; else delete e.view;
+  writeRecent(list);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) savePos(); });
+window.addEventListener('pagehide', savePos);
 
 document.addEventListener('keydown', e => {
   const t = e.target;
@@ -1696,9 +1725,9 @@ function writeRecent(list){
   const keep = new Set(readRecent().map(e => e.pdf));
   before.forEach(k => { if (!keep.has(k)) pdfDel(k); });
 }
-function addRecent({title, text, words, cleaned, lines, pdf, thumb}){
+function addRecent({title, text, words, cleaned, lines, pdf, thumb, pos, view}){
   const list = readRecent().filter(e => e.text !== text);
-  list.unshift({id:Date.now().toString(36) + Math.random().toString(36).slice(2,6), title, text, words, cleaned, lines:lines || null, pdf:pdf || null, thumb:thumb || null, ts:Date.now()});
+  list.unshift({id:Date.now().toString(36) + Math.random().toString(36).slice(2,6), title, text, words, cleaned, lines:lines || null, pdf:pdf || null, thumb:thumb || null, pos:pos || 0, view:view || undefined, ts:Date.now()});
   writeRecent(list.slice(0, RECENT_MAX));
   if ($('[data-panel="recent"]').classList.contains('active')) renderRecent();
 }
@@ -1720,7 +1749,7 @@ function renderRecent(){
     const row = document.createElement('div');
     row.className = 'recent-item';
     row.innerHTML = `${e.thumb ? `<img class="recent-thumb" alt="" src="${e.thumb}">` : ''}<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div>${e.cleaned ? '' : '<button class="btn ai sm recent-clean">' + ic('ai') + ' Clean</button>'}<button class="del">${ic('x')}</button>`;
-    row.onclick = () => loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb});
+    row.onclick = () => loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb, pos:e.pos || 0, view:e.view});
     const cb = row.querySelector('.recent-clean');
     if (cb) cb.onclick = async ev => {
       ev.stopPropagation();
@@ -2290,6 +2319,7 @@ function enterReading(){
   h.textContent = 'Esc to exit' + (ttsOk() ? ' · Space to listen/pause' : '') + (R.heads.length ? ' · T for contents' : '');
   h.style.animation = 'none'; h.offsetHeight; h.style.animation = '';
   scrollReadToWord(S.idx);
+  if (S.pdf && S.pdfView) setPdfMode(true);
   const req = document.documentElement.requestFullscreen;
   if (req && !document.fullscreenElement) req.call(document.documentElement).catch(()=>{});
   requestAnimationFrame(() => { R.cur = -2; updateReadProgress(); rEls.scroll.focus({preventScroll:true}); });
@@ -2324,12 +2354,21 @@ function wordAtReadLine(){
   return Math.min(S.words.length - 1, Math.round(w / Math.max(1, R.wtotal) * S.words.length));
 }
 
+function readWordIdx(){
+  if (pdfVoiceActive() && T.uwTotal) return Math.round(pdfVoiceFrac() * S.words.length);
+  if (inPdf() && PV.doc) return Math.round((PV.cum[PV.cur - 1] || 0) * S.words.length);
+  if (Math.abs(rEls.scroll.scrollTop - R.enterTop) > 2) return wordAtReadLine();
+  return S.idx;
+}
+
 function exitReading(keepFs){
   if (!S.reading) return;
   closeLookup();
+  seek(readWordIdx());
   ttsStop();
-  if (Math.abs(rEls.scroll.scrollTop - R.enterTop) > 2) seek(wordAtReadLine());
+  S.pdfView = inPdf();
   S.reading = false;
+  savePos();
   setPdfMode(false);
   document.body.classList.remove('read-mode', 'toc-open');
   rEls.tocBtn.classList.remove('on');
