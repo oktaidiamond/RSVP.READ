@@ -209,6 +209,8 @@ body.focus .exit-focus{display:inline-flex;position:fixed;top:16px;right:16px;z-
 .fs-focus{display:none}
 body.focus .fs-focus{display:inline-flex;position:fixed;top:16px;left:16px;z-index:50}
 .warn{position:fixed;top:22px;left:50%;transform:translate(-50%,-6px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);font-size:13px;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s}
+.undo-toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,8px);display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;padding:8px 8px 8px 14px;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s}
+.undo-toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
 .warn.show{opacity:1;transform:translate(-50%,0)}
 .hint{position:fixed;top:22px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12.5px;pointer-events:none;white-space:nowrap;z-index:55}
 body.focus .hint-focus,body.read-mode .hint-read{display:block;animation:hintOut 3.5s ease forwards}
@@ -539,6 +541,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
 <button class="btn sm fs-focus" id="fsFocus" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
 <button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
 <div class="warn" id="warn"></div>
+<div class="undo-toast" id="undoToast"><span id="undoMsg"></span><button class="btn sm" id="undoBtn">Undo</button></div>
 <div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause</div>
 <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
 <div class="reading" id="reading">
@@ -1059,6 +1062,7 @@ window.addEventListener('pagehide', savePos);
 document.addEventListener('keydown', e => {
   const t = e.target;
   if (t.closest && t.closest('input,textarea,select,[contenteditable="true"]')) return;
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z') && UNDO.stack.length){ e.preventDefault(); undoRestore(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   hideTip();
   if (S.reading){ readingKey(e); return; }
@@ -1808,8 +1812,55 @@ function writeRecent(list){
   };
   commit();
   const keep = new Set(readRecent().map(e => e.pdf));
-  before.forEach(k => { if (!keep.has(k)) pdfDel(k); });
+  before.forEach(k => { if (!keep.has(k)) dropPdf(k); });
 }
+const UNDO = {stack:[], cur:null, hide:0};
+function dropPdf(k){ if (UNDO.cur) UNDO.cur.keys.add(k); else pdfDel(k); }
+function undoHideToast(){ clearTimeout(UNDO.hide); $('#undoToast').classList.remove('show'); }
+function undoExpire(item){
+  clearTimeout(item.timer);
+  const i = UNDO.stack.indexOf(item);
+  if (i >= 0) UNDO.stack.splice(i, 1);
+  const keep = new Set(readRecent().map(e => e.pdf));
+  UNDO.stack.forEach(it => it.deleted.forEach(e => keep.add(e.pdf)));
+  item.keys.forEach(k => { if (!keep.has(k)) pdfDel(k); });
+  if (!UNDO.stack.length) undoHideToast();
+}
+function deleteRecent(drop, msg){
+  const prev = readRecent();
+  const deleted = prev.filter(drop);
+  if (!deleted.length) return;
+  const item = {deleted, keys:new Set(), timer:0};
+  UNDO.cur = item;
+  writeRecent(prev.filter(e => !drop(e)));
+  UNDO.cur = null;
+  item.timer = setTimeout(() => undoExpire(item), 60000);
+  UNDO.stack.push(item);
+  $('#undoMsg').textContent = msg;
+  $('#undoToast').classList.add('show');
+  clearTimeout(UNDO.hide);
+  UNDO.hide = setTimeout(undoHideToast, 6000);
+  renderRecent();
+}
+function undoRestore(){
+  const item = UNDO.stack.pop();
+  if (!item) return false;
+  clearTimeout(item.timer);
+  const have = new Set(readRecent().map(e => e.id));
+  const back = item.deleted.filter(e => !have.has(e.id));
+  writeRecent([...readRecent(), ...back].sort((x, y) => (y.ts || 0) - (x.ts || 0)));
+  undoHideToast();
+  renderRecent();
+  return true;
+}
+async function pdfSweep(){
+  try {
+    const keys = await pdfStore('readonly', st => st.getAllKeys());
+    const keep = new Set(readRecent().map(e => e.pdf));
+    (keys || []).forEach(k => { if (!keep.has(k)) pdfDel(k); });
+  } catch {}
+}
+setTimeout(pdfSweep, 2000);
 function addRecent({title, text, words, cleaned, lines, pdf, thumb, pos, view}){
   const list = readRecent().filter(e => e.text !== text);
   list.unshift({id:Date.now().toString(36) + Math.random().toString(36).slice(2,6), title, text, words, cleaned, lines:lines || null, pdf:pdf || null, thumb:thumb || null, pos:pos || 0, view:view || undefined, ts:Date.now()});
@@ -1860,14 +1911,14 @@ function renderRecent(){
     };
     row.querySelector('.del').onclick = ev => {
       ev.stopPropagation();
-      writeRecent(readRecent().filter(x => x.id !== e.id));
       hideTip();
-      renderRecent();
+      deleteRecent(x => x.id === e.id, `Removed “${e.title.length > 40 ? e.title.slice(0, 40) + '…' : e.title}”`);
     };
     box.appendChild(row);
   });
 }
-$('#clearRecent').onclick = () => { writeRecent([]); renderRecent(); };
+$('#clearRecent').onclick = () => { const n = readRecent().length; deleteRecent(() => true, `Cleared ${n} ${n === 1 ? 'text' : 'texts'}`); };
+$('#undoBtn').onclick = undoRestore;
 
 const CHAPTER_RE = /^(chapter|part|book|volume)\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty[\w-]*|thirty[\w-]*|forty[\w-]*|fifty[\w-]*|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last|final)\b|^(prologue|epilogue|preface|foreword|afterword|introduction|appendix|interlude)\b/i;
 const ROMAN_RE = /^(?=[MDCLXVI])M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\.?$/;
