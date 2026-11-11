@@ -151,6 +151,8 @@ textarea:focus{border-color:var(--muted)}
 .file-name{font-size:12.5px;color:var(--muted);word-break:break-all}
 
 .text-head{position:sticky;top:-16px;margin:-16px -16px 0;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;z-index:2}
+.text-acts{display:flex;gap:6px}
+.text-edit{height:420px;margin-top:12px}
 .text-body{font-size:14px;line-height:1.75;color:var(--muted);word-wrap:break-word}
 .text-body p{margin-bottom:12px}
 .text-body span.cur{color:var(--accent)}
@@ -510,8 +512,9 @@ body.focus .transport .play .ic{width:22px;height:22px}
       </div>
 
       <div class="panel" data-panel="text">
-        <div class="text-head"><span class="label" id="textCount">0 words</span><button class="btn sm" id="copyBtn">Copy</button></div>
+        <div class="text-head"><span class="label" id="textCount">0 words</span><span class="text-acts"><button class="btn sm" id="editCancel" hidden>Cancel</button><button class="btn sm primary" id="editSave" hidden>Save changes</button><button class="btn sm" id="editBtn" hidden>Edit</button><button class="btn sm" id="copyBtn">Copy</button></span></div>
         <div class="text-body" id="textBody"><div class="empty">No text loaded yet.</div></div>
+        <textarea class="text-edit" id="textEdit" hidden spellcheck="true"></textarea>
       </div>
 
       <div class="panel" data-panel="samples" id="samplesPanel"></div>
@@ -697,6 +700,13 @@ function autoTitle(words){
   return words.length > 6 ? t + '…' : t;
 }
 
+function exitEdit(){
+  $('#textEdit').hidden = true;
+  $('#textBody').hidden = false;
+  $('#editSave').hidden = $('#editCancel').hidden = true;
+  $('#editBtn').hidden = !S.text;
+  $('#copyBtn').hidden = false;
+}
 function buildTextViews(){
   let k = 0, html = '';
   for (const p of S.paras){
@@ -713,6 +723,7 @@ function buildTextViews(){
   S.textSpans = [...els.textBody.querySelectorAll('span')];
   S.tickerSpans = [...els.tickerTrack.querySelectorAll('span')];
   els.textCount.textContent = `${fmtNum(S.words.length)} words`;
+  exitEdit();
 }
 
 function showWord(i){
@@ -1723,6 +1734,34 @@ els.textBody.addEventListener('click', e => {
   if (i >= 0) seek(i);
 });
 
+$('#editBtn').onclick = () => {
+  if (!S.text) return;
+  const ta = $('#textEdit');
+  ta.value = S.text;
+  ta.hidden = false;
+  editCount();
+  $('#textBody').hidden = true;
+  $('#editBtn').hidden = $('#copyBtn').hidden = true;
+  $('#editSave').hidden = $('#editCancel').hidden = false;
+  ta.focus();
+};
+let editTimer = 0;
+function editCount(){
+  const n = tokenize($('#textEdit').value).reduce((a, p) => a + p.length, 0);
+  els.textCount.textContent = `${fmtNum(n)} words`;
+}
+$('#textEdit').addEventListener('input', () => { clearTimeout(editTimer); editTimer = setTimeout(editCount, 200); });
+$('#editCancel').onclick = () => { clearTimeout(editTimer); els.textCount.textContent = `${fmtNum(S.words.length)} words`; exitEdit(); };
+$('#editSave').onclick = () => {
+  const next = $('#textEdit').value;
+  if (next.trim() === S.text) { exitEdit(); return; }
+  const old = S.text;
+  const entry = readRecent().find(e => e.text === old);
+  const ok = loadText(next, {title:S.title, cleaned:entry ? entry.cleaned : false, lines:null, pdfKey:S.pdf ? S.pdf.key : null, thumb:entry ? entry.thumb : null, pos:S.words.length ? S.idx / S.words.length : 0, view:S.pdfView ? 'pdf' : ''});
+  if (!ok) return;
+  writeRecent(readRecent().filter(e => e.text !== old));
+  if ($('[data-panel="recent"]').classList.contains('active')) renderRecent();
+};
 $('#copyBtn').onclick = () => {
   if (!S.text) return;
   copyText(S.text, $('#copyBtn'));
