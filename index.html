@@ -267,12 +267,17 @@ body.pdf-mode .pdf-view{display:block}
 body.pdf-mode .read-scroll,body.pdf-mode #tocBtn,body.pdf-mode .read-controls .font-dd{display:none}
 :root{--txw:min(440px,40vw)}
 body.pdf-mode.pdf-split .read-scroll{display:block;left:auto;width:var(--txw);border-left:1px solid var(--border)}
-body.pdf-mode.pdf-split .read-scroll{top:56px}
+body.pdf-mode.pdf-split .read-scroll{top:56px;bottom:var(--dockh,104px);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 7%,#000 93%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 7%,#000 93%,transparent 100%)}
+.tx-bar{display:none;position:absolute;right:6px;top:56px;bottom:var(--dockh,104px);width:4px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);z-index:4;pointer-events:none}
+body.pdf-mode.pdf-split .tx-bar{display:block}
+.tx-thumb{position:absolute;left:0;right:0;top:0;height:30px;border-radius:2px;background:color-mix(in srgb,var(--muted) 75%,transparent)}
+body.pdf-mode.pdf-split .read-col{padding:8vh 24px 55vh}
 body.pdf-mode.pdf-split .read-col{font-size:15px}
 body.pdf-mode.pdf-split .pdf-view{right:var(--txw)}
 .tts-skip{display:none;width:34px;padding:0}
 body.pdf-mode.tts-active .tts-skip{display:inline-flex}
 @media (max-width:900px){
+  body.pdf-mode.pdf-split .tx-bar{top:55%;right:4px}
   body.pdf-mode.pdf-split .read-scroll{left:0;width:auto;top:55%;border-left:0;border-top:1px solid var(--border)}
   body.pdf-mode.pdf-split .pdf-view{right:0;bottom:45%}
   body.pdf-mode.pdf-split .pdf-sync{right:0}
@@ -557,6 +562,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
     </div>
   </div>
   <div class="pdf-view" id="pdfView" tabindex="-1"></div>
+  <div class="tx-bar" id="txBar"><div class="tx-thumb" id="txThumb"></div></div>
   <div class="pdf-sync" id="pdfSyncWrap" hidden><button class="btn sm" id="pdfSync"><svg class="ic"><use href="#ic-caret"/></svg>Jump to voice</button></div>
   <button class="btn sm read-fs" id="fsBtn" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
   <div class="read-top">
@@ -2007,7 +2013,17 @@ function renderReading(){
   rEls.scroll.scrollTop = 0;
 }
 
+function txBarUpdate(){
+  const bar = $('#txBar');
+  if (!bar || !document.body.classList.contains('pdf-split') || !inPdf()) return;
+  const sc = rEls.scroll, h = bar.clientHeight, max = sc.scrollHeight - sc.clientHeight;
+  const th = Math.max(24, Math.min(h, h * sc.clientHeight / Math.max(1, sc.scrollHeight)));
+  const t = $('#txThumb');
+  t.style.height = th + 'px';
+  t.style.transform = `translateY(${max > 0 ? Math.min(1, sc.scrollTop / max) * (h - th) : 0}px)`;
+}
 function updateReadProgress(){
+  txBarUpdate();
   if (inPdf()) return;
   const sc = rEls.scroll;
   const max = sc.scrollHeight - sc.clientHeight;
@@ -2298,6 +2314,7 @@ $('#pdfTx').onclick = () => {
   const on = document.body.classList.toggle('pdf-split');
   $('#pdfTx').classList.toggle('on', on);
   if (PV.doc) pdfLayout();
+  requestAnimationFrame(txBarUpdate);
   if (on && T.cur >= 0){
     const el = T.sp[T.cur], sc = rEls.scroll, rs = el && el.getClientRects();
     if (rs && rs.length) sc.scrollTo({top:sc.scrollTop + rs[0].top - sc.getBoundingClientRect().top - sc.clientHeight * 0.25});
@@ -2871,7 +2888,8 @@ function ttsMark(si){
   if (T.cur === si) return;
   const prev = T.sp[T.cur], el = T.sp[si];
   const sc = rEls.scroll, v = sc.getBoundingClientRect();
-  const vh = sc.clientHeight - ($('.read-dock-inner').offsetHeight + 18);
+  const split = inPdf() && document.body.classList.contains('pdf-split');
+  const vh = split ? sc.clientHeight : sc.clientHeight - ($('.read-dock-inner').offsetHeight + 18);
   const pr = prev && prev.getClientRects()[0];
   const following = !prev || !pr || (pr.top >= v.top && pr.top <= v.top + vh);
   if (prev) prev.classList.remove('on');
@@ -2883,7 +2901,7 @@ function ttsMark(si){
   const top = rs[0].top - v.top, bottom = rs[rs.length - 1].bottom - v.top;
   const tall = bottom - top > vh * 0.6;
   if (top > vh * 0.6 || bottom > vh || top < 24){
-    sc.scrollTo({top:sc.scrollTop + top - (tall ? 36 : vh * 0.25), behavior:reduceMotion() ? 'auto' : 'smooth'});
+    sc.scrollTo({top:sc.scrollTop + top - (tall ? 36 : vh * (split ? 0.35 : 0.25)), behavior:reduceMotion() ? 'auto' : 'smooth'});
   }
 }
 
