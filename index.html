@@ -2209,6 +2209,11 @@ function pdfLayout(){
   PV.zt = setTimeout(() => [...pdfEl.children].forEach(d => { pdfFree(d); PV.io.unobserve(d); PV.io.observe(d); }), 180);
 }
 
+function pdfStep(d){
+  const k = Math.log(PV.zoom) / Math.log(1.15);
+  const n = d > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1;
+  pdfZoom(Math.pow(1.15, n));
+}
 function pdfZoom(z){
   z = Math.max(0.5, Math.min(3, z));
   $('#rSize').textContent = Math.round(z * 100) + '%';
@@ -2518,8 +2523,8 @@ function readingKey(e){
       if (ttsOk()) ttsToggle();
       break;
     case 't': case 'T': if (inPdf()){ if (ttsOk()) pdfTxToggle(); } else toggleToc(); break;
-    case '+': case '=': inPdf() ? pdfZoom(PV.zoom * 1.15) : setReadSize(S.rsize + 2); break;
-    case '-': case '_': inPdf() ? pdfZoom(PV.zoom / 1.15) : setReadSize(S.rsize - 2); break;
+    case '+': case '=': inPdf() ? pdfStep(1) : setReadSize(S.rsize + 2); break;
+    case '-': case '_': inPdf() ? pdfStep(-1) : setReadSize(S.rsize - 2); break;
     case 'Escape': LK.open ? closeLookup() : exitReading(); break;
   }
 }
@@ -2557,8 +2562,8 @@ $('#exitRead').onclick = () => exitReading();
   el.addEventListener('pointercancel', end);
 })();
 rEls.tocBtn.onclick = toggleToc;
-$('#rSizeDown').onclick = () => inPdf() ? pdfZoom(PV.zoom / 1.15) : setReadSize(S.rsize - 2);
-$('#rSizeUp').onclick = () => inPdf() ? pdfZoom(PV.zoom * 1.15) : setReadSize(S.rsize + 2);
+$('#rSizeDown').onclick = () => inPdf() ? pdfStep(-1) : setReadSize(S.rsize - 2);
+$('#rSizeUp').onclick = () => inPdf() ? pdfStep(1) : setReadSize(S.rsize + 2);
 
 const LK = {open:false, range:null, ctrl:null, text:'', ctx:'', id:0};
 const lkEls = {box:$('#lookup'), word:$('#lkWord'), dict:$('#lkDict'), ai:$('#lkAi'), explain:$('#lkExplain')};
