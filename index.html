@@ -255,7 +255,7 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .read-controls .btn.on{border-color:var(--accent);color:var(--accent)}
 .pdf-sync{position:absolute;left:0;right:0;z-index:5;display:flex;justify-content:center;pointer-events:none}
 .pdf-sync .btn{pointer-events:auto;background:var(--surface2);box-shadow:0 4px 16px rgba(0,0,0,.4)}
-.pdf-sync.up{top:62px}
+.pdf-sync.up{top:14px}
 .pdf-sync.down{bottom:118px}
 .pdf-sync.up .ic{transform:rotate(180deg)}
 body.pdf-mode.pdf-split .pdf-sync{right:var(--txw)}
@@ -369,6 +369,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
   .transport .play{width:100px}
 }
 @media (max-width:600px),(hover:none){
+  .pdf-sync.up{top:62px}
   .hint{display:none!important}
 }
 @media (prefers-reduced-motion:reduce){
