@@ -208,6 +208,8 @@ body.focus .focus-controls .val{font-family:'DM Mono',monospace;font-size:12px;c
 body.focus .exit-focus{display:inline-flex;position:fixed;top:16px;right:16px;z-index:50}
 .fs-focus{display:none}
 body.focus .fs-focus{display:inline-flex;position:fixed;top:16px;left:16px;z-index:50}
+.warn{position:fixed;top:22px;left:50%;transform:translate(-50%,-6px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);font-size:13px;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s}
+.warn.show{opacity:1;transform:translate(-50%,0)}
 .hint{position:fixed;top:22px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12.5px;pointer-events:none;white-space:nowrap;z-index:55}
 body.focus .hint-focus,body.read-mode .hint-read{display:block;animation:hintOut 3.5s ease forwards}
 body.focus.ticker-on .stage{height:34vh;min-height:180px}
@@ -229,10 +231,10 @@ body.focus .focus-controls .val.sz{min-width:46px}
 .reading,.lookup{display:none}
 body.read-mode header,body.read-mode .main{display:none!important}
 body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;background:var(--bg);animation:fadeIn .3s ease}
-.read-scroll{position:absolute;inset:0;overflow-y:auto;outline:none;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 15%,#000 68%,transparent 85%);mask-image:linear-gradient(to bottom,transparent 0,#000 15%,#000 68%,transparent 85%)}
+.read-scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;outline:none;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 15%,#000 68%,transparent 85%);mask-image:linear-gradient(to bottom,transparent 0,#000 15%,#000 68%,transparent 85%)}
 .read-scroll::-webkit-scrollbar{display:none}
 .read-col,.read-dock-inner{max-width:min(1100px,72ch);margin:0 auto;font-family:var(--word-font),monospace;font-size:var(--read-size)}
-.read-col{padding:18vh 24px 42vh;line-height:1.8;color:var(--text)}
+.read-col{overflow-wrap:anywhere;padding:18vh 24px 42vh;line-height:1.8;color:var(--text)}
 .read-col p{margin:0 0 1.15em}
 .read-col .r-ch{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:2.8em;line-height:1.05;letter-spacing:.02em;margin:2.4em 0 .45em}
 .read-col .r-sec{font-family:'DM Sans',sans-serif;font-weight:600;font-size:1.2em;line-height:1.35;margin:1.9em 0 .7em}
@@ -268,6 +270,10 @@ body.is-fs .read-fs,body.is-fs .fs-focus{display:none!important}
 body.pdf-mode .pdf-view{display:block}
 body.pdf-mode .read-scroll,body.pdf-mode #tocBtn,body.pdf-mode .read-controls .font-dd{display:none}
 :root{--txw:min(440px,40vw)}
+.tx-div{display:none;position:absolute;top:56px;bottom:var(--dockh,104px);right:var(--txw);width:14px;margin-right:-7px;cursor:col-resize;z-index:6;touch-action:none}
+.tx-div::after{content:'';position:absolute;top:0;bottom:0;left:6px;width:2px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
+.tx-div:hover::after,.tx-div.drag::after{opacity:.7}
+body.pdf-mode.pdf-split .tx-div{display:block}
 body.pdf-mode.pdf-split .read-scroll{display:block;left:auto;width:var(--txw);border-left:1px solid var(--border)}
 body.pdf-mode.pdf-split .read-scroll{top:56px;bottom:var(--dockh,104px);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 7%,#000 93%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 7%,#000 93%,transparent 100%)}
 .tx-bar{display:none;position:absolute;right:6px;top:56px;bottom:var(--dockh,104px);width:4px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);z-index:4;pointer-events:none}
@@ -279,6 +285,7 @@ body.pdf-mode.pdf-split .pdf-view{right:var(--txw)}
 .tts-skip{display:none;width:34px;padding:0}
 body.pdf-mode.tts-active .tts-skip{display:inline-flex}
 @media (max-width:900px){
+  body.pdf-mode.pdf-split .tx-div{display:none}
   body.pdf-mode.pdf-split .tx-bar{top:55%;right:4px}
   body.pdf-mode.pdf-split .read-scroll{left:0;width:auto;top:55%;border-left:0;border-top:1px solid var(--border)}
   body.pdf-mode.pdf-split .pdf-view{right:0;bottom:45%}
@@ -531,6 +538,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
 
 <button class="btn sm fs-focus" id="fsFocus" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
 <button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
+<div class="warn" id="warn"></div>
 <div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause</div>
 <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
 <div class="reading" id="reading">
@@ -566,6 +574,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
     </div>
   </div>
   <div class="pdf-view" id="pdfView" tabindex="-1"></div>
+  <div class="tx-div" id="txDiv"></div>
   <div class="tx-bar" id="txBar"><div class="tx-thumb" id="txThumb"></div></div>
   <div class="pdf-sync" id="pdfSyncWrap" hidden><button class="btn sm" id="pdfSync"><svg class="ic"><use href="#ic-caret"/></svg>Jump to voice</button></div>
   <button class="btn sm read-fs" id="fsBtn" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
@@ -794,8 +803,16 @@ function centerTicker(span){
   els.tickerTrack.style.transform = `translateY(${y}px)`;
 }
 
+let warnTimer = 0;
+function warn(msg){
+  const w = $('#warn');
+  w.textContent = msg;
+  w.classList.add('show');
+  clearTimeout(warnTimer);
+  warnTimer = setTimeout(() => w.classList.remove('show'), 2200);
+}
 function play(){
-  if (!S.words.length) return;
+  if (!S.words.length){ warn('Load some text first'); return; }
   if (S.done){ S.idx = 0; S.done = false; }
   S.playing = true;
   updatePlayUI();
@@ -972,6 +989,7 @@ $$('.theme-toggle').forEach(b => b.onclick = () => document.body.classList.toggl
 
 function enterFocus(){
   if (S.focus) return;
+  if (!S.words.length){ warn('Load some text first'); return; }
   hideTip();
   S.focus = true;
   document.body.classList.add('focus');
@@ -2171,8 +2189,16 @@ function pdfClose(){
   pdfEl.replaceChildren();
 }
 
+const txDefault = () => Math.min(440, document.documentElement.clientWidth * 0.4);
+const txWidth = () => PV.txw ? Math.min(PV.txw, document.documentElement.clientWidth * 0.7) : txDefault();
+function setTxw(w){
+  const cw = document.documentElement.clientWidth;
+  w = Math.max(280, Math.min(cw * 0.7, w));
+  if (Math.abs(w - txDefault()) < 28){ PV.txw = 0; document.documentElement.style.removeProperty('--txw'); }
+  else { PV.txw = w; document.documentElement.style.setProperty('--txw', w + 'px'); }
+}
 function pdfWidth(){
-  const avail = document.documentElement.clientWidth - 32 - (document.body.classList.contains('pdf-split') && document.documentElement.clientWidth > 900 ? Math.min(440, document.documentElement.clientWidth * 0.4) : 0);
+  const avail = document.documentElement.clientWidth - 32 - (document.body.classList.contains('pdf-split') && document.documentElement.clientWidth > 900 ? txWidth() : 0);
   return Math.round(Math.max(200, Math.min(780, avail)) * PV.zoom);
 }
 
@@ -2350,7 +2376,26 @@ async function setPdfMode(on){
 
 $('#pdfBtn').onclick = () => setPdfMode(!inPdf());
 $('#pdfSync').onclick = () => pdfGoto(pdfPageOf(pdfVoiceFrac()), true);
-$('#pdfTx').onclick = () => {
+(() => {
+  const d = $('#txDiv');
+  let raf = 0;
+  d.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    d.setPointerCapture(e.pointerId);
+    d.classList.add('drag');
+  });
+  d.addEventListener('pointermove', e => {
+    if (!d.classList.contains('drag')) return;
+    setTxw(document.documentElement.clientWidth - e.clientX);
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf = 0; pdfLayout(); txBarUpdate(); });
+  });
+  const end = () => d.classList.remove('drag');
+  d.addEventListener('pointerup', end);
+  d.addEventListener('pointercancel', end);
+  window.addEventListener('resize', () => { if (PV.txw){ setTxw(PV.txw); if (PV.doc) pdfLayout(); } });
+})();
+function pdfTxToggle(){
   const on = document.body.classList.toggle('pdf-split');
   $('#pdfTx').classList.toggle('on', on);
   if (PV.doc) pdfLayout();
@@ -2359,7 +2404,8 @@ $('#pdfTx').onclick = () => {
     const el = T.sp[T.cur], sc = rEls.scroll, rs = el && el.getClientRects();
     if (rs && rs.length) sc.scrollTo({top:sc.scrollTop + rs[0].top - sc.getBoundingClientRect().top - sc.clientHeight * 0.25});
   }
-};
+}
+$('#pdfTx').onclick = pdfTxToggle;
 const ttsSkip = d => {
   if (!pdfVoiceActive() || !T.units.length) return;
   ttsJump(Math.max(0, Math.min(T.units.length - 1, T.u + d)), false, false);
@@ -2386,7 +2432,7 @@ window.addEventListener('resize', () => {
 
 function enterReading(){
   if (S.reading || S.focus) return;
-  if (!S.words.length) return;
+  if (!S.words.length){ warn('Load some text first'); return; }
   hideTip();
   pause();
   if (R.built !== S.docVersion) renderReading();
@@ -2471,7 +2517,7 @@ function readingKey(e){
       if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
       if (ttsOk()) ttsToggle();
       break;
-    case 't': case 'T': toggleToc(); break;
+    case 't': case 'T': if (inPdf()){ if (ttsOk()) pdfTxToggle(); } else toggleToc(); break;
     case '+': case '=': inPdf() ? pdfZoom(PV.zoom * 1.15) : setReadSize(S.rsize + 2); break;
     case '-': case '_': inPdf() ? pdfZoom(PV.zoom / 1.15) : setReadSize(S.rsize - 2); break;
     case 'Escape': LK.open ? closeLookup() : exitReading(); break;
