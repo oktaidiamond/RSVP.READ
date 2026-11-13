@@ -1149,7 +1149,11 @@ pasteArea.addEventListener('input', () => {
 $('#pasteLoad').onclick = () => {
   const v = pasteArea.value.trim();
   if (!v) return;
-  loadText(v, {cleaned:pasteCleaned});
+  if (!loadText(v, {cleaned:pasteCleaned})) return;
+  pasteArea.value = '';
+  pasteCleaned = false;
+  $('#pasteClean').hidden = $('#pasteFix').hidden = true;
+  $('#pasteStatus').classList.remove('show');
 };
 $('#pasteClean').onclick = async () => {
   const box = $('#pasteStatus');
