@@ -2375,7 +2375,7 @@ function pdfProgress(){
   const max = pdfEl.scrollHeight - pdfEl.clientHeight;
   const frac = PV.drag != null ? PV.drag : voice ? T.u / Math.max(1, T.units.length) : (max > 0 ? Math.min(1, pdfEl.scrollTop / max) : 1);
   rEls.fill.style.width = $('#readKnob').style.left = (frac * 100) + '%';
-  rEls.pct.textContent = Math.round(frac * 100) + '%';
+  rEls.pct.textContent = (voice ? ttsEta() + ' · ' : '') + Math.round(frac * 100) + '%';
   rEls.chapter.textContent = `Page ${cur} of ${PV.n}`;
   const vp = voice ? pdfPageOf(pdfVoiceFrac()) : 0;
   const dir = !voice ? '' : vp < pdfPageAt(top) ? 'up' : vp > pdfPageAt(pdfEl.scrollTop + pdfEl.clientHeight - 150) ? 'down' : '';
@@ -2953,7 +2953,7 @@ function chunkText(t, max = 240){
   return out;
 }
 
-const T = {state:'idle', worker:null, ready:null, sp:[], units:[], u:0, src:null, waiting:-1, cache:new Map(), asked:new Set(), epoch:0, pct:0, cur:-1, voice:'af_heart', speed:1};
+const T = {state:'idle', worker:null, ready:null, sp:[], units:[], u:0, src:null, waiting:-1, cache:new Map(), asked:new Set(), epoch:0, pct:0, cur:-1, voice:'af_heart', speed:1, pace:{}};
 const tEls = {btn:$('#ttsBtn')};
 
 function ttsReset(){
@@ -3017,8 +3017,24 @@ function ttsTrim(){
   });
 }
 
+function ttsEta(){
+  if (!T.uwTotal) return '';
+  const p = T.pace[T.voice];
+  const spw = p && p.w >= 20 ? p.sec / p.w : 0.38;
+  const left = Math.max(0, T.uwTotal - (T.uw[Math.min(T.u, T.units.length - 1)] || 0));
+  const min = Math.round(left * spw / T.speed / 60);
+  if (min < 1) return '<1 min left';
+  return min < 60 ? `~${min} min left` : `~${Math.floor(min / 60)} h ${min % 60} min left`;
+}
+
 function ttsGot(m){
   if (m.voice !== T.voice || T.state === 'idle') return;
+  const w = (T.uw[m.id + 1] === undefined ? T.uwTotal : T.uw[m.id + 1]) - T.uw[m.id];
+  if (w > 0 && m.samples && m.rate){
+    const p = T.pace[T.voice] || (T.pace[T.voice] = {sec:0, w:0});
+    p.sec += m.samples.length / m.rate;
+    p.w += w;
+  }
   T.cache.set(m.id, wavUrl(m.samples, m.rate));
   ttsTrim();
   if (T.waiting === m.id && T.state === 'playing') ttsPlay(m.id);
@@ -3128,6 +3144,7 @@ function ttsToggle(){
 
 function ttsSpeed(){
   ttsUi();
+  pdfProgress();
   if (T.src) T.src.playbackRate = T.speed;
 }
 
