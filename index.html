@@ -2135,6 +2135,10 @@ function txBarUpdate(){
   t.style.height = th + 'px';
   t.style.transform = `translateY(${max > 0 ? Math.min(1, sc.scrollTop / max) * (h - th) : 0}px)`;
 }
+function readEta(){
+  if (inPdf() || !R.pctText) return;
+  rEls.pct.textContent = (pdfVoiceActive() ? ttsEta() + ' · ' : '') + R.pctText;
+}
 function updateReadProgress(){
   txBarUpdate();
   if (inPdf()) return;
@@ -2144,7 +2148,8 @@ function updateReadProgress(){
   const fits = !first || last.offsetTop + last.offsetHeight - first.offsetTop <= sc.clientHeight * 0.5;
   const pct = fits || max <= 0 ? 1 : Math.min(1, sc.scrollTop / max);
   rEls.fill.style.width = $('#readKnob').style.left = (pct * 100) + '%';
-  rEls.pct.textContent = Math.round(pct * 100) + '%';
+  R.pctText = Math.round(pct * 100) + '%';
+  readEta();
   const line = sc.scrollTop + sc.clientHeight * (pct >= 0.995 ? 0.75 : 0.3);
   let idx = -1;
   for (let i = 0; i < R.track.length; i++){
@@ -2975,6 +2980,7 @@ function ttsUi(){
   b.classList.toggle('on', T.state !== 'idle');
   document.body.classList.toggle('tts-active', T.state !== 'idle');
   pdfProgress();
+  readEta();
 }
 
 async function gpuOk(){
@@ -3072,6 +3078,7 @@ function ttsPlay(i){
   T.u = i;
   ttsTrim();
   pdfProgress();
+  readEta();
   ttsMark(T.units[i].s);
   ttsWant(i); ttsWant(i + 1); ttsWant(i + 2);
   const url = T.cache.get(i);
