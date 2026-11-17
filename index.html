@@ -337,6 +337,10 @@ body.tts-active .ts.on:hover{background:color-mix(in srgb,var(--accent) 22%,tran
 body.focus .focus-controls .dropdown{flex:0 0 168px;min-width:0}
 .read-controls .dropdown.tts-dd{flex:0 0 108px;min-width:0}
 .read-controls .dropdown.tts-sp{flex:0 0 78px}
+.read-controls .dropdown.tts-vol{flex:0 0 104px}
+.tts-vol .dd-btn{gap:6px}
+.tts-vol .dd-btn .tts-label{flex:1;text-align:left}
+.tts-vol .vol-ic{width:15px;height:15px;color:var(--muted);flex:none}
 .tts-sp .dd-list{min-width:0;width:100%}
 .tts-sp .dd-item>span:first-child{white-space:nowrap}
 .tts-dd .dd-list{left:auto;right:0;min-width:100%;max-height:60vh;overflow-y:auto}
@@ -601,6 +605,10 @@ body.focus .transport .play .ic{width:22px;height:22px}
         <button class="btn sm tts-skip" id="ttsFwd" title="Forward"><svg class="ic"><use href="#ic-sf"/></svg></button>
         <div class="dropdown tts-ui tts-on tts-dd tts-sp" id="ttsSpDd">
           <button class="dd-btn"><span class="tts-label">1x</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
+          <div class="dd-list"></div>
+        </div>
+        <div class="dropdown tts-ui tts-on tts-dd tts-sp tts-vol" id="ttsVolDd">
+          <button class="dd-btn"><svg class="ic vol-ic"><use href="#ic-speaker"/></svg><span class="tts-label">100%</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
           <div class="dd-list"></div>
         </div>
         <div class="dropdown tts-ui tts-on tts-dd" id="ttsDd">
@@ -3198,6 +3206,7 @@ function lkPlayNext(){
   const url = LKS.parts[LKS.play];
   if (!url) return;
   const a = new Audio(url);
+  applyVol(a);
   a.onended = () => { LKS.audio = null; LKS.play++; if (LKS.play >= LKS.total) lkSpeakStop(); else lkPlayNext(); };
   LKS.audio = a;
   LKS.state = 'playing';
@@ -3296,7 +3305,23 @@ function chunkText(t, max = 240){
   return out;
 }
 
-const T = {state:'idle', worker:null, ready:null, sp:[], units:[], u:0, src:null, waiting:-1, cache:new Map(), asked:new Set(), epoch:0, pct:0, cur:-1, voice:'af_heart', speed:1, pace:{}};
+const T = {state:'idle', worker:null, ready:null, sp:[], units:[], u:0, src:null, waiting:-1, cache:new Map(), asked:new Set(), epoch:0, pct:0, cur:-1, voice:'af_heart', speed:1, vol:100, pace:{}};
+const VOL = {ctx:null, gain:null, wired:new WeakSet()};
+function applyVol(a){
+  if (!a) return;
+  const v = T.vol / 100;
+  if (!VOL.wired.has(a) && v <= 1){ a.volume = v; return; }
+  if (!VOL.wired.has(a)){
+    try{
+      if (!VOL.ctx){ VOL.ctx = new (window.AudioContext || window.webkitAudioContext)(); VOL.gain = VOL.ctx.createGain(); VOL.gain.connect(VOL.ctx.destination); }
+      VOL.ctx.createMediaElementSource(a).connect(VOL.gain);
+      VOL.wired.add(a);
+    }catch(e){ a.volume = Math.min(1, v); return; }
+  }
+  a.volume = 1;
+  VOL.gain.gain.value = v;
+  if (VOL.ctx.state === 'suspended') VOL.ctx.resume();
+}
 const tEls = {btn:$('#ttsBtn')};
 
 function ttsReset(){
@@ -3426,6 +3451,7 @@ function ttsPlay(i){
   const a = new Audio(url);
   a.preservesPitch = true;
   a.playbackRate = T.speed;
+  applyVol(a);
   a.onended = () => { if (T.src !== a) return; T.src = null; ttsPlay(i + 1); };
   T.src = a;
   a.play().catch(() => {});
@@ -3566,6 +3592,7 @@ function ttsDropdown(dd, items, get, set){
   sync();
 }
 ttsDropdown($('#ttsDd'), TTS_VOICES.map(v => ({v:v[0], label:v[1], group:v[2]})), () => T.voice, v => { T.voice = v; ttsRetune(); });
+ttsDropdown($('#ttsVolDd'), [200,175,150,125,100,75,50,25,0].map(v => ({v, label:v + '%'})), () => T.vol, v => { T.vol = v; applyVol(T.src); applyVol(LKS.audio); });
 ttsDropdown($('#ttsSpDd'), [...TTS_SPEEDS].reverse().map(v => ({v, label:v + 'x', html:Number.isInteger(v) ? `<span class="sp-whole">${v}x</span>` : `<span class="sp-frac">${v}x</span>`})), () => T.speed, v => { T.speed = v; ttsSpeed(); });
 ttsUi();
 
