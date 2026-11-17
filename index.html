@@ -2274,14 +2274,37 @@ function pdfStep(d){
   const n = d > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1;
   pdfZoom(Math.pow(1.15, n));
 }
-function pdfZoom(z){
+function pdfZoom(z, ax, ay){
   z = Math.max(0.5, Math.min(3, z));
   $('#rSize').textContent = Math.round(z * 100) + '%';
   if (!PV.doc || z === PV.zoom) return;
-  const at = pdfEl.scrollHeight ? pdfEl.scrollTop / pdfEl.scrollHeight : 0;
+  const now = performance.now();
+  let an = PV.an;
+  if (ax === undefined || !an || now - an.t > 300 || Math.abs(ax - an.ax) > 3 || Math.abs(ay - an.ay) > 3){
+    const vr = pdfEl.getBoundingClientRect();
+    if (ax === undefined){ ax = vr.left + vr.width / 2; ay = vr.top + vr.height / 2; }
+    let pg = null, best = Infinity;
+    for (const d of pdfEl.children){
+      const r = d.getBoundingClientRect();
+      const dist = ay < r.top ? r.top - ay : ay > r.bottom ? ay - r.bottom : 0;
+      if (dist < best){ best = dist; pg = d; if (!dist) break; }
+    }
+    an = {ax, ay, pg, fx:0, fy:0, t:now};
+    if (pg){
+      const r = pg.getBoundingClientRect();
+      an.fx = (ax - r.left) / r.width;
+      an.fy = (ay - r.top) / r.height;
+    }
+    PV.an = an;
+  }
+  an.t = now;
   PV.zoom = z;
   pdfLayout();
-  pdfEl.scrollTop = at * pdfEl.scrollHeight;
+  if (an.pg){
+    const r = an.pg.getBoundingClientRect();
+    pdfEl.scrollLeft += r.left + an.fx * r.width - an.ax;
+    pdfEl.scrollTop += r.top + an.fy * r.height - an.ay;
+  }
   pdfProgress();
 }
 
@@ -2480,11 +2503,11 @@ $('#ttsFwd').onclick = () => ttsSkip(1);
 pdfEl.addEventListener('wheel', e => {
   if (!e.ctrlKey) return;
   e.preventDefault();
-  pdfZoom(PV.zoom * Math.exp(-e.deltaY * 0.01));
+  pdfZoom(PV.zoom * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
 }, {passive:false});
 let gz = 1;
 pdfEl.addEventListener('gesturestart', e => { e.preventDefault(); gz = PV.zoom; });
-pdfEl.addEventListener('gesturechange', e => { e.preventDefault(); pdfZoom(gz * e.scale); });
+pdfEl.addEventListener('gesturechange', e => { e.preventDefault(); pdfZoom(gz * e.scale, e.clientX, e.clientY); });
 pdfEl.addEventListener('scroll', () => {
   if (PV.raf) return;
   PV.raf = requestAnimationFrame(() => { PV.raf = 0; pdfProgress(); });
