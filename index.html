@@ -207,9 +207,11 @@ body.focus .focus-seek{display:block}
 body.focus .focus-bar i,.focus-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 body.focus .focus-controls{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;transition:opacity .3s ease}
 body.focus .focus-controls .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);min-width:70px;text-align:center}
-body.focus .exit-focus{display:inline-flex;position:fixed;top:16px;right:16px;z-index:50}
+body.focus .exit-focus{display:inline-flex}
+.focus-left{display:none}
+body.focus .focus-left{display:flex;gap:8px;position:fixed;top:16px;left:16px;z-index:50}
 .fs-focus{display:none}
-body.focus .fs-focus{display:inline-flex;position:fixed;top:16px;left:16px;z-index:50}
+body.focus .fs-focus{display:inline-flex}
 .warn{position:fixed;top:22px;left:50%;transform:translate(-50%,-6px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);font-size:13px;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s}
 .undo-toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,8px);display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;padding:8px 8px 8px 14px;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s}
 .undo-toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
@@ -265,7 +267,7 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .pdf-sync.down{bottom:118px}
 .pdf-sync.up .ic{transform:rotate(180deg)}
 body.pdf-mode.pdf-split .pdf-sync{right:var(--txw)}
-.read-fs{position:absolute;top:16px;left:16px;z-index:6}
+.read-left{position:absolute;top:16px;left:16px;z-index:6;display:flex;gap:8px;align-items:center}
 body.is-fs .read-fs,body.is-fs .fs-focus{display:none!important}
 .read-top{position:absolute;top:16px;right:16px;z-index:6;display:flex;gap:8px;align-items:center}
 .read-dock::before{content:'';position:absolute;inset:-28px 0 0;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 6%,transparent) 20%,color-mix(in srgb,var(--bg) 22%,transparent) 45%,color-mix(in srgb,var(--bg) 50%,transparent) 70%,color-mix(in srgb,var(--bg) 72%,transparent));opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
@@ -540,8 +542,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
   </aside>
 </main>
 
-<button class="btn sm fs-focus" id="fsFocus" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
-<button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
+<div class="focus-left"><button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button><button class="btn sm fs-focus" id="fsFocus" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button></div>
 <div class="warn" id="warn"></div>
 <div class="undo-toast" id="undoToast"><span id="undoMsg"></span><button class="btn sm" id="undoBtn">Undo</button></div>
 <div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause</div>
@@ -582,11 +583,10 @@ body.focus .transport .play .ic{width:22px;height:22px}
   <div class="tx-div" id="txDiv"></div>
   <div class="tx-bar" id="txBar"><div class="tx-thumb" id="txThumb"></div></div>
   <div class="pdf-sync" id="pdfSyncWrap" hidden><button class="btn sm" id="pdfSync"><svg class="ic"><use href="#ic-caret"/></svg>Jump to voice</button></div>
-  <button class="btn sm read-fs" id="fsBtn" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button>
+  <div class="read-left"><button class="btn sm" id="exitRead"><svg class="ic"><use href="#ic-x"/></svg> Exit</button><button class="btn sm read-fs" id="fsBtn" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button></div>
   <div class="read-top">
     <button class="btn sm" id="pdfTx" hidden>Transcript</button>
     <button class="btn sm" id="pdfBtn" hidden>PDF view</button>
-    <button class="btn sm" id="exitRead"><svg class="ic"><use href="#ic-x"/></svg> Exit</button>
   </div>
   <div class="hint hint-read" id="hintRead"></div>
 </div>
