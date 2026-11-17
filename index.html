@@ -342,6 +342,7 @@ body.pdf-mode.pdf-split .tx-bar{display:block}
 body.pdf-mode.pdf-split .read-col{padding:8vh 24px 55vh}
 body.pdf-mode.pdf-split .read-col{font-size:15px}
 body.pdf-mode.pdf-split .pdf-view{right:var(--txw)}
+body.pdf-mode.pdf-split.tx-out .pdf-view{right:0}
 @keyframes txIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
 @keyframes txOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(18px)}}
 @keyframes txInV{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -361,11 +362,14 @@ body.pdf-mode.tts-active .tts-skip{display:inline-flex}
   body.pdf-mode.pdf-split .tx-bar{top:55%;right:4px}
   body.pdf-mode.pdf-split .read-scroll{left:0;width:auto;top:55%;border-left:0;border-top:1px solid var(--border)}
   body.pdf-mode.pdf-split .pdf-view{right:0;bottom:45%}
+  body.pdf-mode.pdf-split.tx-out .pdf-view{bottom:var(--dockh,104px)}
   body.pdf-mode.pdf-split .pdf-sync{right:0}
   body.pdf-mode.pdf-split .pdf-sync.down{bottom:calc(45% + 12px)}
 }
 .pdf-view.can-pan .pdf-page{cursor:grab}
 .pdf-view.panning,.pdf-view.panning .pdf-page{cursor:grabbing}
+.pdf-view.tx-anim{transition:right .25s ease,bottom .25s ease}
+.pdf-view.tx-anim .pdf-page{transition:width .25s ease,height .25s ease}
 .pdf-page{margin:0 auto 14px;background:#fff;border-radius:3px;box-shadow:0 2px 14px rgba(0,0,0,.35);overflow:hidden}
 .pdf-page canvas{display:block;width:100%;height:100%}
 .recent-thumb{width:34px;height:46px;object-fit:cover;object-position:top;border-radius:4px;border:1px solid var(--border);background:#fff;flex:none}
@@ -2709,7 +2713,7 @@ function setTxw(w){
   else { PV.txw = w; document.documentElement.style.setProperty('--txw', w + 'px'); }
 }
 function pdfWidth(){
-  const avail = document.documentElement.clientWidth - 32 - (document.body.classList.contains('pdf-split') && document.documentElement.clientWidth > 900 ? txWidth() : 0);
+  const avail = document.documentElement.clientWidth - 32 - (document.body.classList.contains('pdf-split') && !PV.noSplit && document.documentElement.clientWidth > 900 ? txWidth() : 0);
   return Math.round(Math.max(200, Math.min(780, avail)) * PV.zoom);
 }
 
@@ -2943,6 +2947,9 @@ function pdfTxToggle(){
   if (txAnim) return;
   if (document.body.classList.contains('pdf-split') && inPdf() && !reduceMotion()){
     document.body.classList.add('tx-out');
+    pdfEl.classList.add('tx-anim');
+    PV.noSplit = true;
+    if (PV.doc) pdfLayout();
     $('#pdfTx').classList.remove('on');
     txAnim = setTimeout(() => { txAnim = 0; document.body.classList.remove('tx-out'); pdfTxApply(); }, 180);
     return;
@@ -2950,6 +2957,12 @@ function pdfTxToggle(){
   pdfTxApply();
 }
 function pdfTxApply(){
+  PV.noSplit = false;
+  if (!reduceMotion()){
+    pdfEl.classList.add('tx-anim');
+    clearTimeout(PV.ta);
+    PV.ta = setTimeout(() => pdfEl.classList.remove('tx-anim'), 300);
+  }
   const on = document.body.classList.toggle('pdf-split');
   $('#pdfTx').classList.toggle('on', on);
   if (PV.doc) pdfLayout();
