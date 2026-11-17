@@ -1185,14 +1185,15 @@ async function getSample(){
 function cleanPrompt(list){
   return `Below is text extracted from a PDF or OCR scan, split into numbered units in reading order.
 
-Find two kinds of problems:
+Find three kinds of problems:
 1. OCR misreadings: wrong letters (tbe→the, rn read as m), words split or merged by mistake, stray symbols.
 2. Junk that is not body text: page numbers, running headers or footers, footnotes, figure or table captions, table-of-contents entries, copyright lines.
+3. In-text citations: author-year citations like (Smith, 2019) or (Smith and Jones 2019; Lee 2020), numbered citations like [3] or [1, 2], and footnote numbers stuck to the end of a word. Remove only the citation itself. Leave every other parenthetical alone: asides, definitions, abbreviations, cross-references like (see below) or (Figure 2), and list markers like (a).
 
 Reply with only correction lines, one per line, in these forms:
-N|wrong|right   replace text in unit N. Copy the wrong text exactly and keep it short: just the bad word or a few words.
+N|wrong|right   replace text in unit N. Copy the wrong text exactly and keep it short: just the bad word or a few words. For a footnote number stuck to a word, give the word with the number as wrong and the bare word as right.
 N|-   delete unit N entirely because it is junk.
-N|cut|first words|last words   delete a junk span inside unit N, from those first words through those last words, copied exactly.
+N|cut|first words|last words   delete a junk span or a citation inside unit N, from those first words through those last words, copied exactly. Use one line per citation.
 
 Never rephrase, modernize spelling, or change names or punctuation that could be correct. Keep chapter titles and headings. If nothing needs fixing, reply: none
 
@@ -1300,7 +1301,7 @@ async function aiClean(text, box, lines = null){
     if (s < 0 || e < 0) continue;
     const end = e + f.b.length;
     if (end - s > 1500 || end - s > u.text.length * 0.7) continue;
-    u.text = (u.text.slice(0, s) + u.text.slice(end)).replace(/\s+/g, ' ').trim();
+    u.text = (u.text.slice(0, s) + u.text.slice(end)).replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim();
     cuts++;
   }
   for (const f of fixes.filter(f => f.kind === 'rep')){
