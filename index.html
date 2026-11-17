@@ -170,9 +170,11 @@ textarea:focus{border-color:var(--muted)}
 .recent-head{display:flex;justify-content:space-between;align-items:center}
 .recent-item{position:relative;display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 12px 12px 14px;cursor:pointer;transition:border-color .15s,transform .12s}
 .recent-item:hover{border-color:var(--accent)}
+.recent-item.current{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .recent-item:active{transform:scale(.98)}
 .recent-main{flex:1;min-width:0}
 .recent-main h4{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-title-edit{width:100%;font:inherit;font-size:13.5px;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--accent);border-radius:6px;padding:1px 6px;outline:none}
 .recent-main .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px;flex-wrap:wrap}
 .badge{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);border:1px solid color-mix(in srgb,var(--accent2) 50%,transparent);border-radius:4px;padding:0 5px}
 .recent-clean{flex:none}
@@ -678,7 +680,7 @@ function fmtTime(ms){
 const fmtNum = n => n.toLocaleString();
 const base = () => 60000 / S.wpm;
 
-function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null, thumb=null, pos=0, view=''} = {}){
+function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null, thumb=null, pos=0, view='', keep=false} = {}){
   const paras = tokenize(text);
   const words = paras.flat();
   if (!words.length) return false;
@@ -703,7 +705,7 @@ function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null
   } else pdfKey = S.pdf.key;
   S.pdfView = view === 'pdf' && !!S.pdf;
   updatePdfUI();
-  addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines, pdf:S.pdf ? S.pdf.key : null, thumb:S.pdf ? thumb : null, pos, view:S.pdfView ? 'pdf' : ''});
+  addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines, pdf:S.pdf ? S.pdf.key : null, thumb:S.pdf ? thumb : null, pos, view:S.pdfView ? 'pdf' : '', keep});
   if (pos > 0) seek(Math.min(words.length - 1, Math.round(pos * words.length)));
   return true;
 }
@@ -1866,11 +1868,23 @@ async function pdfSweep(){
   } catch {}
 }
 setTimeout(pdfSweep, 2000);
-function addRecent({title, text, words, cleaned, lines, pdf, thumb, pos, view}){
-  const list = readRecent().filter(e => e.text !== text);
+let holdRecent = false, recentEditing = false, recentTimer = 0;
+function addRecent({title, text, words, cleaned, lines, pdf, thumb, pos, view, keep}){
+  const all = readRecent();
+  const at = keep ? all.findIndex(e => e.text === text) : -1;
+  if (at >= 0){
+    const e = all[at];
+    e.title = title; e.words = words; e.cleaned = cleaned; e.lines = lines || null;
+    if (pdf) e.pdf = pdf;
+    if (thumb) e.thumb = thumb;
+    writeRecent(all);
+    if (!holdRecent && $('[data-panel="recent"]').classList.contains('active')) renderRecent();
+    return;
+  }
+  const list = all.filter(e => e.text !== text);
   list.unshift({id:Date.now().toString(36) + Math.random().toString(36).slice(2,6), title, text, words, cleaned, lines:lines || null, pdf:pdf || null, thumb:thumb || null, pos:pos || 0, view:view || undefined, ts:Date.now()});
   writeRecent(list.slice(0, RECENT_MAX));
-  if ($('[data-panel="recent"]').classList.contains('active')) renderRecent();
+  if (!holdRecent && $('[data-panel="recent"]').classList.contains('active')) renderRecent();
 }
 function ago(ts){
   const s = Math.floor((Date.now() - ts)/1000);
@@ -1888,9 +1902,54 @@ function renderRecent(){
   box.innerHTML = '';
   list.forEach(e => {
     const row = document.createElement('div');
-    row.className = 'recent-item';
+    row.className = 'recent-item' + (S.text && e.text === S.text ? ' current' : '');
     row.innerHTML = `${e.thumb ? `<img class="recent-thumb" alt="" src="${e.thumb}">` : ''}<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div>${e.cleaned ? '' : '<button class="btn ai sm recent-clean">' + ic('ai') + ' Clean</button>'}<button class="del">${ic('x')}</button>`;
-    row.onclick = () => loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb, pos:e.pos || 0, view:e.view});
+    row.onclick = () => {
+      holdRecent = true;
+      try { loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb, pos:e.pos || 0, view:e.view, keep:true}); }
+      finally { holdRecent = false; }
+      $$('.recent-item').forEach(r => r.classList.toggle('current', r === row));
+      clearTimeout(recentTimer);
+      recentTimer = setTimeout(() => { if (!recentEditing && $('[data-panel="recent"]').classList.contains('active')) renderRecent(); }, 450);
+    };
+    const h4 = row.querySelector('h4');
+    h4.ondblclick = ev => {
+      ev.stopPropagation();
+      recentEditing = true;
+      clearTimeout(recentTimer);
+      const inp = document.createElement('input');
+      inp.className = 'recent-title-edit';
+      inp.value = e.title;
+      inp.maxLength = 200;
+      let done = false;
+      const finish = save => {
+        if (done) return;
+        done = true;
+        recentEditing = false;
+        const t = inp.value.trim();
+        if (save && t && t !== e.title){
+          const list = readRecent();
+          const hit = list.find(x => x.text === e.text);
+          if (hit){
+            hit.title = t;
+            writeRecent(list);
+            if (S.text === e.text) S.title = t;
+          }
+        }
+        renderRecent();
+      };
+      inp.onkeydown = k => {
+        k.stopPropagation();
+        if (k.key === 'Enter') finish(true);
+        else if (k.key === 'Escape') finish(false);
+      };
+      inp.onblur = () => finish(true);
+      inp.onclick = c => c.stopPropagation();
+      inp.ondblclick = c => c.stopPropagation();
+      h4.replaceWith(inp);
+      inp.focus();
+      inp.select();
+    };
     const cb = row.querySelector('.recent-clean');
     if (cb) cb.onclick = async ev => {
       ev.stopPropagation();
