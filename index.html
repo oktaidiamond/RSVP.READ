@@ -2339,7 +2339,7 @@ function pdfLayout(){
   const w = pdfWidth();
   [...pdfEl.children].forEach(d => { d.style.width = w + 'px'; d.style.height = Math.round(w * (+d.dataset.r || PV.ratio)) + 'px'; });
   clearTimeout(PV.zt);
-  PV.zt = setTimeout(() => [...pdfEl.children].forEach(d => { pdfFree(d); PV.io.unobserve(d); PV.io.observe(d); }), 180);
+  PV.zt = setTimeout(() => [...pdfEl.children].forEach(d => { d._tok = (d._tok || 0) + 1; d._done = false; PV.io.unobserve(d); PV.io.observe(d); }), 180);
 }
 
 function pdfStep(d){
@@ -2382,7 +2382,8 @@ function pdfZoom(z, ax, ay){
 }
 
 async function pdfRender(div){
-  if (div._done || div._busy || !PV.doc) return;
+  if (div._done || !PV.doc) return;
+  if (div._busy){ div._again = true; return; }
   div._busy = true;
   const tok = div._tok = (div._tok || 0) + 1;
   try {
@@ -2399,11 +2400,13 @@ async function pdfRender(div){
     if (div._tok === tok){ div.replaceChildren(c); div._done = true; }
   } catch {}
   div._busy = false;
+  if (div._again){ div._again = false; if (!div._done) pdfRender(div); }
 }
 
 function pdfFree(div){
   div._tok = (div._tok || 0) + 1;
   div._done = false;
+  div._again = false;
   div.replaceChildren();
 }
 
