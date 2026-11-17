@@ -326,6 +326,8 @@ body.pdf-mode.tts-active .tts-skip{display:inline-flex}
   body.pdf-mode.pdf-split .pdf-sync{right:0}
   body.pdf-mode.pdf-split .pdf-sync.down{bottom:calc(45% + 12px)}
 }
+.pdf-view.can-pan .pdf-page{cursor:grab}
+.pdf-view.panning,.pdf-view.panning .pdf-page{cursor:grabbing}
 .pdf-page{margin:0 auto 14px;background:#fff;border-radius:3px;box-shadow:0 2px 14px rgba(0,0,0,.35);overflow:hidden}
 .pdf-page canvas{display:block;width:100%;height:100%}
 .recent-thumb{width:34px;height:46px;object-fit:cover;object-position:top;border-radius:4px;border:1px solid var(--border);background:#fff;flex:none}
@@ -2777,6 +2779,30 @@ pdfEl.addEventListener('wheel', e => {
 let gz = 1;
 pdfEl.addEventListener('gesturestart', e => { e.preventDefault(); gz = PV.zoom; });
 pdfEl.addEventListener('gesturechange', e => { e.preventDefault(); pdfZoom(gz * e.scale, e.clientX, e.clientY); });
+const PAN = {on:false, id:0, x:0, y:0, l:0, t:0};
+const canPan = () => pdfEl.scrollWidth > pdfEl.clientWidth + 1 || pdfEl.scrollHeight > pdfEl.clientHeight + 1;
+pdfEl.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || e.button !== 0 || !e.target.closest('.pdf-page') || !canPan()) return;
+  PAN.on = true; PAN.id = e.pointerId; PAN.x = e.clientX; PAN.y = e.clientY; PAN.l = pdfEl.scrollLeft; PAN.t = pdfEl.scrollTop;
+  pdfEl.setPointerCapture(e.pointerId);
+  pdfEl.classList.add('panning');
+  e.preventDefault();
+});
+pdfEl.addEventListener('pointermove', e => {
+  if (PAN.on && e.pointerId === PAN.id){
+    pdfEl.scrollLeft = PAN.l - (e.clientX - PAN.x);
+    pdfEl.scrollTop = PAN.t - (e.clientY - PAN.y);
+    return;
+  }
+  if (e.pointerType === 'mouse') pdfEl.classList.toggle('can-pan', canPan());
+});
+const panEnd = e => {
+  if (!PAN.on || e.pointerId !== PAN.id) return;
+  PAN.on = false;
+  pdfEl.classList.remove('panning');
+};
+pdfEl.addEventListener('pointerup', panEnd);
+pdfEl.addEventListener('pointercancel', panEnd);
 pdfEl.addEventListener('scroll', () => {
   if (PV.raf) return;
   PV.raf = requestAnimationFrame(() => { PV.raf = 0; pdfProgress(); });
@@ -3157,7 +3183,15 @@ function checkSelection(){
   openLookup(range.cloneRange(), text);
 }
 
-document.addEventListener('mousedown', e => { if (LK.open && !lkEls.box.contains(e.target)) closeLookup(); }, true);
+document.addEventListener('mousedown', e => {
+  if (lkEls.box.contains(e.target)) return;
+  const was = LK.open;
+  if (was) closeLookup();
+  if (was && S.reading){
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed) sel.removeAllRanges();
+  }
+}, true);
 document.addEventListener('mouseup', e => { if (S.reading && !lkEls.box.contains(e.target)) setTimeout(checkSelection, 0); });
 rEls.text.addEventListener('touchend', () => setTimeout(checkSelection, 250));
 lkEls.box.addEventListener('mousedown', e => e.preventDefault());
