@@ -182,12 +182,13 @@ textarea:focus{border-color:var(--muted)}
 .recent-more svg{width:16px;height:16px}
 .recent-more:hover,.recent-more.open{color:var(--text);background:var(--surface)}
 .rmenu{position:fixed;z-index:250;min-width:196px;padding:5px;display:flex;flex-direction:column;background:var(--surface2);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 32px rgba(0,0,0,.45);animation:fadeIn .12s ease}
-.rmenu button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:7px 10px;border-radius:6px;font-size:13px;color:var(--text)}
+.rmenu button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;text-align:left;padding:7px 10px;border-radius:6px;font-size:13px;color:var(--text)}
 .rmenu button:hover:not(:disabled){background:var(--surface)}
 .rmenu button:disabled{opacity:.4;cursor:default}
 .rmenu button.confirm{color:var(--accent2)}
 .rmenu button.danger:hover:not(:disabled){color:var(--accent)}
-.rmenu button .ic{width:14px;height:14px;color:var(--accent2);flex:none}
+.rmenu button .ic{width:14px;height:14px;flex:none}
+.rmenu button.ai .ic{color:var(--accent2)}
 .rmenu hr{border:0;border-top:1px solid var(--border);margin:4px 2px}
 
 .tooltip{position:fixed;z-index:200;background:var(--text);color:var(--bg);font-size:11.5px;font-weight:500;padding:5px 9px;border-radius:6px;pointer-events:none;opacity:0;transform:translateY(3px);transition:opacity .15s,transform .15s;white-space:nowrap}
@@ -430,6 +431,10 @@ body.focus .transport .play .ic{width:22px;height:22px}
 <symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
 <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
 <symbol id="ic-up" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></symbol>
+<symbol id="ic-rename" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></symbol>
+<symbol id="ic-edit" viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></symbol>
+<symbol id="ic-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+<symbol id="ic-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
 </defs></svg>
 <header class="fade-up">
   <h1>RSVP<span class="title-dot">.</span>READ</h1>
@@ -2031,13 +2036,13 @@ function openMenu(btn, e, row){
   const en = readRecent().find(x => x.id === e.id) || e;
   const n = (en.hist || []).length;
   const items = [
-    {t:'Rename', fn:() => row._rename()},
-    {t:'Edit text', fn:() => editEntry(en)},
-    {t:'Fix spelling', fn:() => runFix(en), off:recentBusy},
-    {t:'Clean with AI', fn:() => runClean(en), off:recentBusy, sure:!!en.cleaned, ai:true},
-    {t:n > 1 ? `Undo last change · ${n}` : 'Undo last change', fn:() => recentUndo(en.id), off:!n},
+    {t:'Rename', i:'rename', fn:() => row._rename()},
+    {t:'Edit text', i:'edit', fn:() => editEntry(en)},
+    {t:'Fix spelling', i:'text', fn:() => runFix(en), off:recentBusy},
+    {t:'Clean with AI', fn:() => runClean(en), off:recentBusy, sure:!!en.cleaned, ai:true, i:'ai'},
+    {t:n > 1 ? `Undo last change · ${n}` : 'Undo last change', i:'undo', fn:() => recentUndo(en.id), off:!n},
     null,
-    {t:'Delete', cls:'danger', fn:() => deleteRecent(x => x.id === en.id, `Removed “${en.title.length > 40 ? en.title.slice(0, 40) + '…' : en.title}”`)}
+    {t:'Delete', i:'trash', cls:'danger', fn:() => deleteRecent(x => x.id === en.id, `Removed “${en.title.length > 40 ? en.title.slice(0, 40) + '…' : en.title}”`)}
   ];
   const m = document.createElement('div');
   m.className = 'rmenu';
@@ -2048,8 +2053,9 @@ function openMenu(btn, e, row){
     const b = document.createElement('button');
     const lab = document.createElement('span');
     lab.textContent = it.t;
+    b.insertAdjacentHTML('beforeend', ic(it.i));
     b.appendChild(lab);
-    if (it.ai) b.insertAdjacentHTML('beforeend', ic('ai'));
+    if (it.ai) b.classList.add('ai');
     b.disabled = !!it.off;
     if (it.cls) b.className = it.cls;
     b.onclick = ev => {
