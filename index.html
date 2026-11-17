@@ -2868,9 +2868,8 @@ function pdfProgress(){
   if (voice){
     const pgEl = pdfEl.children[vp - 1];
     if (pgEl){
-      const a = PV.cum[vp - 1] || 0, z = vp < PV.n ? PV.cum[vp] : 1;
-      const vy = pgEl.offsetTop + (z > a ? Math.min(1, Math.max(0, (pdfVoiceFrac() - a) / (z - a))) : 0) * pgEl.offsetHeight;
-      dir = vy < pdfEl.scrollTop ? 'up' : vy > pdfEl.scrollTop + pdfEl.clientHeight ? 'down' : '';
+      const st = pdfEl.scrollTop;
+      dir = pgEl.offsetTop + pgEl.offsetHeight <= st ? 'up' : pgEl.offsetTop >= st + pdfEl.clientHeight ? 'down' : '';
     }
   }
   const wrap = $('#pdfSyncWrap');
