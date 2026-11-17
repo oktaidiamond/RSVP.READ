@@ -288,9 +288,21 @@ body.pdf-mode.pdf-split .tx-bar{display:block}
 body.pdf-mode.pdf-split .read-col{padding:8vh 24px 55vh}
 body.pdf-mode.pdf-split .read-col{font-size:15px}
 body.pdf-mode.pdf-split .pdf-view{right:var(--txw)}
+@keyframes txIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes txOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(18px)}}
+@keyframes txInV{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes txOutV{from{opacity:1;transform:none}to{opacity:0;transform:translateY(18px)}}
+@keyframes txFade{from{opacity:0}to{opacity:1}}
+@keyframes txFadeOut{from{opacity:1}to{opacity:0}}
+body.pdf-mode.pdf-split .read-scroll{animation:txIn .25s ease}
+body.pdf-mode.pdf-split .tx-bar{animation:txFade .25s ease}
+body.pdf-mode.pdf-split.tx-out .read-scroll{animation:txOut .18s ease forwards}
+body.pdf-mode.pdf-split.tx-out .tx-bar{animation:txFadeOut .18s ease forwards}
 .tts-skip{display:none;width:34px;padding:0}
 body.pdf-mode.tts-active .tts-skip{display:inline-flex}
 @media (max-width:900px){
+  body.pdf-mode.pdf-split .read-scroll{animation-name:txInV}
+  body.pdf-mode.pdf-split.tx-out .read-scroll{animation-name:txOutV}
   body.pdf-mode.pdf-split .tx-div{display:none}
   body.pdf-mode.pdf-split .tx-bar{top:55%;right:4px}
   body.pdf-mode.pdf-split .read-scroll{left:0;width:auto;top:55%;border-left:0;border-top:1px solid var(--border)}
@@ -2543,7 +2555,18 @@ $('#pdfSync').onclick = () => pdfGoto(pdfPageOf(pdfVoiceFrac()), true);
   d.addEventListener('pointercancel', end);
   window.addEventListener('resize', () => { if (PV.txw){ setTxw(PV.txw); if (PV.doc) pdfLayout(); } });
 })();
+let txAnim = 0;
 function pdfTxToggle(){
+  if (txAnim) return;
+  if (document.body.classList.contains('pdf-split') && inPdf() && !reduceMotion()){
+    document.body.classList.add('tx-out');
+    $('#pdfTx').classList.remove('on');
+    txAnim = setTimeout(() => { txAnim = 0; document.body.classList.remove('tx-out'); pdfTxApply(); }, 180);
+    return;
+  }
+  pdfTxApply();
+}
+function pdfTxApply(){
   const on = document.body.classList.toggle('pdf-split');
   $('#pdfTx').classList.toggle('on', on);
   if (PV.doc) pdfLayout();
