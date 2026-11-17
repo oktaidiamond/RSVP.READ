@@ -505,6 +505,8 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 <symbol id="ic-rename" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></symbol>
 <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></symbol>
 <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+<symbol id="ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="ic-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
 <symbol id="ic-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
 </defs></svg>
 <header class="fade-up">
@@ -601,6 +603,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
       <div class="panel active" data-panel="paste">
         <textarea id="pasteArea" placeholder="Paste any text here…"></textarea>
         <button class="btn primary block" id="pasteLoad"><svg class="ic"><use href="#ic-play"/></svg> Load Text into Reader</button>
+        <button class="btn block" id="pasteSrc" title="Paste a source copied from another RSVP.READ (Ctrl+V)"><svg class="ic"><use href="#ic-paste"/></svg> Paste copied source</button>
         <button class="btn block" id="pasteFix" hidden><svg class="ic"><use href="#ic-text"/></svg> Fix spelling</button>
         <button class="btn ai block" id="pasteClean" hidden><svg class="ic"><use href="#ic-ai"/></svg> Clean with AI</button>
         <div class="status" id="pasteStatus"><div class="status-row"><span class="status-text"></span><button class="status-x" title="Dismiss"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
@@ -2204,6 +2207,7 @@ function openMenu(btn, e, row){
   const n = (en.hist || []).length;
   const items = [
     {t:'Rename', i:'rename', fn:() => row._rename()},
+    {t:'Copy source', i:'copy', fn:() => copySource(en)},
     {t:'Edit text', i:'edit', fn:() => editEntry(en)},
     {t:'Fix spelling', i:'text', fn:() => runFix(en), off:recentBusy},
     {t:'Clean with AI', fn:() => runClean(en), off:recentBusy, sure:!!en.cleaned, ai:true, i:'ai'},
@@ -2323,6 +2327,51 @@ function renderRecent(){
     box.appendChild(row);
   });
 }
+
+const SRC_TYPE = 'web application/x-rsvp-source';
+async function copySource(en){
+  try {
+    const pdf = en.pdf ? await pdfGet(en.pdf) : null;
+    const live = S.text === en.text && S.words.length > 0;
+    const head = new TextEncoder().encode(JSON.stringify({v:1, title:en.title, text:en.text, cleaned:!!en.cleaned, lines:en.lines || null, pos:live ? S.idx / S.words.length : (en.pos || 0), view:live ? (S.pdfView ? 'pdf' : '') : (en.view || ''), thumb:en.thumb || null, hasPdf:!!pdf}));
+    const len = new Uint8Array(4);
+    new DataView(len.buffer).setUint32(0, head.length);
+    const parts = [len, head];
+    if (pdf) parts.push(pdf);
+    const item = {'text/plain': new Blob([en.text], {type:'text/plain'}), [SRC_TYPE]: new Blob(parts, {type:SRC_TYPE})};
+    await navigator.clipboard.write([new ClipboardItem(item)]);
+    warn(pdf ? 'Source copied with PDF' : 'Source copied');
+  } catch (err) {
+    try { await navigator.clipboard.writeText(en.text); warn('Copied text only · source copy not supported here', true); }
+    catch { warn('Copy failed', true); }
+  }
+}
+async function pasteSource(){
+  let items;
+  try { items = await navigator.clipboard.read(); }
+  catch { warn('Clipboard access blocked', true); return; }
+  for (const it of items){
+    if (!it.types.includes(SRC_TYPE)) continue;
+    try {
+      const buf = await (await it.getType(SRC_TYPE)).arrayBuffer();
+      const hl = new DataView(buf).getUint32(0);
+      const h = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl)));
+      const pdf = h.hasPdf ? new Uint8Array(buf.slice(4 + hl)) : null;
+      if (!loadText(h.text, {title:h.title, cleaned:h.cleaned, lines:h.lines, pdf, thumb:h.thumb, pos:h.pos, view:h.view})) throw 0;
+      warn('Source pasted');
+      return;
+    } catch { warn('Could not read copied source', true); return; }
+  }
+  warn('No copied source on the clipboard', true);
+}
+$('#pasteSrc').onclick = pasteSource;
+document.addEventListener('keydown', ev => {
+  if (!(ev.ctrlKey || ev.metaKey) || ev.altKey || ev.shiftKey || ev.key.toLowerCase() !== 'v') return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) || ev.target.isContentEditable) return;
+  if (S.focus || S.reading || document.querySelector('.modal.show,.overlay.show')) return;
+  ev.preventDefault();
+  pasteSource();
+});
 $('#clearRecent').onclick = () => { const n = readRecent().length; deleteRecent(() => true, `Cleared ${n} ${n === 1 ? 'text' : 'texts'}`); };
 $('#undoBtn').onclick = undoRestore;
 
