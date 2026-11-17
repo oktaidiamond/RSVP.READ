@@ -2700,7 +2700,7 @@ function pdfClose(){
   if (PV.io) PV.io.disconnect();
   PV.io = null;
   if (PV.doc) PV.doc.destroy();
-  PV.doc = null; PV.key = null; PV.n = 0;
+  PV.doc = null; PV.key = null; PV.n = 0; PV.keep = null;
   pdfEl.replaceChildren();
 }
 
@@ -2864,7 +2864,15 @@ function pdfProgress(){
   rEls.pct.textContent = (voice ? ttsEta() + ' · ' : '') + Math.round(frac * 100) + '%';
   rEls.chapter.textContent = `Page ${cur} of ${PV.n}`;
   const vp = voice ? pdfPageOf(pdfVoiceFrac()) : 0;
-  const dir = !voice ? '' : vp < pdfPageAt(top) ? 'up' : vp > pdfPageAt(pdfEl.scrollTop + pdfEl.clientHeight - 150) ? 'down' : '';
+  let dir = '';
+  if (voice){
+    const pgEl = pdfEl.children[vp - 1];
+    if (pgEl){
+      const a = PV.cum[vp - 1] || 0, z = vp < PV.n ? PV.cum[vp] : 1;
+      const vy = pgEl.offsetTop + (z > a ? Math.min(1, Math.max(0, (pdfVoiceFrac() - a) / (z - a))) : 0) * pgEl.offsetHeight;
+      dir = vy < pdfEl.scrollTop ? 'up' : vy > pdfEl.scrollTop + pdfEl.clientHeight ? 'down' : '';
+    }
+  }
   const wrap = $('#pdfSyncWrap');
   wrap.hidden = !dir;
   wrap.className = 'pdf-sync ' + dir;
@@ -2891,6 +2899,7 @@ async function setPdfMode(on){
   const btn = $('#pdfBtn');
   if (!on){
     const was = inPdf();
+    if (was) PV.keep = pdfEl.scrollTop;
     document.body.classList.remove('pdf-mode');
     btn.dataset.v = 'text';
     $('#pdfSyncWrap').hidden = true;
@@ -2911,7 +2920,8 @@ async function setPdfMode(on){
   btn.dataset.v = 'pdf';
   $('#pdfTx').hidden = !ttsOk();
   $('#rSize').textContent = Math.round(PV.zoom * 100) + '%';
-  pdfGoto(pdfPageOf(at));
+  if (pdfVoiceActive() && PV.keep != null){ pdfEl.scrollTop = PV.keep; pdfProgress(); }
+  else pdfGoto(pdfPageOf(at));
   pdfEl.focus({preventScroll:true});
   requestAnimationFrame(pdfProgress);
 }
@@ -3594,7 +3604,7 @@ function txSync(){
   const el = T.sp[T.cur];
   const live = S.reading && T.state !== 'idle' && T.cur >= 0 && el && !(inPdf() && !document.body.classList.contains('pdf-split'));
   if (!live){ txSyncEl.hidden = true; return; }
-  const {v, vh} = txSyncPlace(el);
+  const {v, vh, split} = txSyncPlace(el);
   const rs = el.getClientRects();
   if (!rs.length){ txSyncEl.hidden = true; return; }
   const top = rs[0].top - v.top, bottom = rs[rs.length - 1].bottom - v.top;
@@ -3603,7 +3613,17 @@ function txSync(){
   txSyncEl.hidden = false;
   txSyncEl.className = 'tx-sync ' + dir;
   txSyncEl.style.left = (v.left + v.width / 2) + 'px';
-  txSyncEl.style.top = (dir === 'up' ? v.top + 64 : v.top + vh - 44) + 'px';
+  const mob = split && innerWidth <= 900;
+  if (dir === 'up'){
+    txSyncEl.style.bottom = 'auto';
+    txSyncEl.style.top = (v.top + (!split && matchMedia('(max-width:600px),(hover:none)').matches ? 62 : 14)) + 'px';
+  } else if (mob){
+    txSyncEl.style.bottom = 'auto';
+    txSyncEl.style.top = (v.top + vh - 44) + 'px';
+  } else {
+    txSyncEl.style.top = 'auto';
+    txSyncEl.style.bottom = '118px';
+  }
 }
 txSyncEl.querySelector('button').onclick = () => {
   const el = T.sp[T.cur];
