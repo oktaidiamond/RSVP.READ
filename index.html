@@ -20,7 +20,8 @@ body.light-mode{
 }
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
-html,body{background:var(--bg);color:var(--text)}
+html,body{background:var(--bg);color:var(--text);overscroll-behavior:none}
+.pdf-view,.read-scroll,textarea{overscroll-behavior:contain}
 body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
 button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:none;background:none}
 button:disabled{opacity:.45;cursor:default}
