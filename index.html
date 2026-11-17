@@ -21,6 +21,11 @@ body.light-mode{
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
 html,body{background:var(--bg);color:var(--text);overscroll-behavior:none}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:color-mix(in srgb,var(--muted) 18%,transparent);border:2px solid transparent;background-clip:padding-box;border-radius:4px}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 75%,transparent);border:2px solid transparent;background-clip:padding-box;border-radius:4px}
+::-webkit-scrollbar-corner{background:transparent}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 75%,transparent) color-mix(in srgb,var(--muted) 18%,transparent)}}
 .pdf-view,.read-scroll,textarea{overscroll-behavior:contain}
 body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
 button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:none;background:none}
@@ -356,10 +361,12 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 .toc-item:hover{background:var(--surface2);color:var(--text)}
 .toc-item:active{transform:scale(.98)}
 .toc-item.cur{color:var(--accent)}
-.lookup{display:flex;flex-direction:column;max-height:min(70vh,380px);position:fixed;z-index:60;width:320px;max-width:calc(100vw - 16px);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text);opacity:0;visibility:hidden;transform:translateY(4px);pointer-events:none;transition:opacity .15s,transform .15s,visibility .15s}
+.lookup{display:flex;flex-direction:column;max-height:min(70vh,260px);position:fixed;z-index:60;width:320px;max-width:calc(100vw - 16px);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text);opacity:0;visibility:hidden;transform:translateY(4px);pointer-events:none;transition:opacity .15s,transform .15s,visibility .15s}
 .lookup.below{transform:translateY(-4px)}
 .lookup.show{opacity:1;visibility:visible;transform:none;pointer-events:auto}
-.lk-body{overflow-y:auto;min-height:0;overscroll-behavior:contain;scrollbar-width:thin}
+.lk-body{overflow-y:auto;min-height:0;overscroll-behavior:contain}
+.lk-acts{display:flex;gap:6px;flex:none}
+#lkSpeak{min-width:34px;padding:0 8px}
 .lk-head{flex:none;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
 .lk-word{font-weight:700;font-size:15px;line-height:1.3;word-break:break-word}
 .lk-phon{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:4px}
@@ -431,6 +438,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
 <symbol id="ic-caret" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 <symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
 <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+<symbol id="ic-speaker" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></symbol>
 <symbol id="ic-up" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></symbol>
 <symbol id="ic-rename" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></symbol>
 <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></symbol>
@@ -618,7 +626,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
   <div class="hint hint-read" id="hintRead"></div>
 </div>
 <div class="lookup" id="lookup">
-  <div class="lk-head"><b class="lk-word" id="lkWord"></b><button class="btn sm" id="lkCopy">Copy</button></div>
+  <div class="lk-head"><b class="lk-word" id="lkWord"></b><span class="lk-acts"><button class="btn sm tts-ui" id="lkSpeak" title="Play aloud"></button><button class="btn sm" id="lkCopy">Copy</button></span></div>
   <div class="lk-body" id="lkBody"><div class="lk-dict" id="lkDict"></div>
   <div class="lk-ai" id="lkAi"></div></div>
   <button class="btn ai sm lk-explain" id="lkExplain"><svg class="ic"><use href="#ic-ai"/></svg> Ask AI</button>
@@ -707,7 +715,7 @@ function fmtTime(ms){
 const fmtNum = n => n.toLocaleString();
 const base = () => 60000 / S.wpm;
 
-function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null, thumb=null, pos=0, view='', keep=false} = {}){
+function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null, thumb=null, pos=0, view='', keep=false, lu=null, ln=null} = {}){
   const paras = tokenize(text);
   const words = paras.flat();
   if (!words.length) return false;
@@ -717,6 +725,7 @@ function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null
   S.prefix = [0];
   for (let i = 0; i < words.length; i++) S.prefix.push(S.prefix[i] + S.mult[i]);
   S.idx = 0; S.done = false; S.prevIdx = -1;
+  S.lu = lu; S.ln = ln;
   updatePlayUI();
   els.placeholder.hidden = true;
   els.stats.hidden = false;
@@ -1080,9 +1089,11 @@ function savePos(){
   const idx = S.reading ? Math.min(S.words.length - 1, readWordIdx()) : S.idx;
   const pos = S.done ? 0 : +(idx / S.words.length).toFixed(4);
   const view = S.pdfView ? 'pdf' : '';
-  if (e.pos === pos && (e.view || '') === view) return;
+  const lu = S.lu != null && S.ln != null ? S.lu : null;
+  if (e.pos === pos && (e.view || '') === view && (e.lu == null ? null : e.lu) === lu) return;
   e.pos = pos;
   if (view) e.view = view; else delete e.view;
+  if (lu != null){ e.lu = lu; e.ln = S.ln; } else { delete e.lu; delete e.ln; }
   writeRecent(list);
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) savePos(); });
@@ -1953,7 +1964,7 @@ function recentApply(e, out, cleaned, msg){
   const wasLoaded = S.text === cur.text;
   const vk = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   pdfPut(vk, {text:cur.text, lines:cur.lines || null, cleaned:!!cur.cleaned, words:cur.words});
-  const next = {...cur, text, lines:out.lines || null, cleaned, words:tokenize(text).flat().length, hist:[...(cur.hist || []), vk].slice(-HIST_MAX)};
+  const next = {...cur, text, lines:out.lines || null, cleaned, words:tokenize(text).flat().length, hist:[...(cur.hist || []), vk].slice(-HIST_MAX), lu:undefined, ln:undefined};
   const list = all.filter(x => x.id !== cur.id && x.text !== text);
   list.splice(Math.min(idx, list.length), 0, next);
   writeRecent(list);
@@ -1980,7 +1991,7 @@ async function recentUndo(id, key){
     return false;
   }
   const wasLoaded = S.text === cur.text;
-  const next = {...cur, text:v.text, lines:v.lines || null, cleaned:!!v.cleaned, words:v.words || tokenize(v.text).flat().length, hist:rest};
+  const next = {...cur, text:v.text, lines:v.lines || null, cleaned:!!v.cleaned, words:v.words || tokenize(v.text).flat().length, hist:rest, lu:undefined, ln:undefined};
   const list = all.filter(x => x.id !== id && x.text !== v.text);
   list.splice(Math.min(j, list.length), 0, next);
   writeRecent(list);
@@ -2020,7 +2031,7 @@ async function runClean(e){
   renderRecent();
 }
 function editEntry(en){
-  if (S.text !== en.text) loadText(en.text, {title:en.title, cleaned:en.cleaned, lines:en.lines || null, pdfKey:en.pdf, thumb:en.thumb, pos:en.pos || 0, view:en.view, keep:true});
+  if (S.text !== en.text) loadText(en.text, {title:en.title, cleaned:en.cleaned, lines:en.lines || null, pdfKey:en.pdf, thumb:en.thumb, pos:en.pos || 0, view:en.view, keep:true, lu:en.lu, ln:en.ln});
   openTab('text');
   $('#editBtn').click();
 }
@@ -2103,7 +2114,7 @@ function renderRecent(){
     row.innerHTML = `${e.thumb ? `<img class="recent-thumb" alt="" src="${e.thumb}">` : ''}<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span class="sep">·</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div><button class="recent-more" title="More">${DOTS}</button>`;
     row.onclick = () => {
       holdRecent = true;
-      try { loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb, pos:e.pos || 0, view:e.view, keep:true}); }
+      try { loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb, pos:e.pos || 0, view:e.view, keep:true, lu:e.lu, ln:e.ln}); }
       finally { holdRecent = false; }
       $$('.recent-item').forEach(r => r.classList.toggle('current', r === row));
       clearTimeout(recentTimer);
@@ -2899,6 +2910,7 @@ $('#rSizeDown').onclick = () => inPdf() ? pdfStep(-1) : setReadSize(S.rsize - 2)
 $('#rSizeUp').onclick = () => inPdf() ? pdfStep(1) : setReadSize(S.rsize + 2);
 
 const LK = {open:false, range:null, ctrl:null, text:'', ctx:'', id:0};
+const LKS = {sid:0, state:'idle', parts:[], play:0, total:0, audio:null};
 const lkEls = {box:$('#lookup'), word:$('#lkWord'), dict:$('#lkDict'), ai:$('#lkAi'), explain:$('#lkExplain')};
 
 function contextFor(range){
@@ -2925,6 +2937,7 @@ function placeLookup(){
 }
 
 function closeLookup(){
+  if (LKS.state !== 'idle') lkSpeakStop();
   if (!LK.open) return;
   LK.open = false;
   LK.id++;
@@ -2935,6 +2948,7 @@ function closeLookup(){
 }
 
 function openLookup(range, text){
+  if (LKS.state !== 'idle') lkSpeakStop();
   closeLookup();
   LK.open = true;
   LK.id++;
@@ -3087,8 +3101,7 @@ async function wikiLookup(q){
     if (!res.ok) return null;
     const j = await res.json();
     if (!j.extract) return null;
-    const ext = j.extract.length > 320 ? j.extract.slice(0, 320).replace(/\s+\S*$/, '') + '…' : j.extract;
-    return `<span class="label lk-pos">Wikipedia · ${esc(j.title || page.title || q)}</span><div>${esc(ext)}</div>`;
+    return `<span class="label lk-pos">Wikipedia · ${esc(j.title || page.title || q)}</span><div>${esc(j.extract)}</div>`;
   } catch { return null; }
 }
 
@@ -3142,6 +3155,58 @@ rEls.text.addEventListener('touchend', () => setTimeout(checkSelection, 250));
 lkEls.box.addEventListener('mousedown', e => e.preventDefault());
 lkEls.explain.onclick = explainSelection;
 $('#lkCopy').onclick = () => copyText(LK.text, $('#lkCopy'));
+
+function lkSpeakUi(){
+  const b = $('#lkSpeak');
+  b.innerHTML = LKS.state === 'loading' && !LKS.queued && T.pct && T.pct < 99 ? `${T.pct}%` : ic('speaker');
+  b.classList.toggle('on', LKS.state !== 'idle');
+}
+function lkSpeakStop(){
+  LKS.sid++;
+  if (LKS.audio){ LKS.audio.onended = null; LKS.audio.pause(); LKS.audio = null; }
+  LKS.parts.forEach(u => u && URL.revokeObjectURL(u));
+  LKS.parts = []; LKS.play = 0; LKS.total = 0; LKS.queued = false;
+  LKS.state = 'idle';
+  lkSpeakUi();
+}
+async function lkSpeak(){
+  if (LKS.state !== 'idle'){ lkSpeakStop(); return; }
+  const text = (LK.text || '').replace(/\s+/g, ' ').trim();
+  if (!text) return;
+  if (T.state === 'playing') ttsPause();
+  const sid = ++LKS.sid;
+  LKS.state = 'loading'; LKS.parts = []; LKS.play = 0; LKS.queued = false;
+  lkSpeakUi();
+  try { await ttsWorker(); } catch { if (sid === LKS.sid) lkSpeakStop(); return; }
+  if (sid !== LKS.sid) return;
+  const chunks = chunkText(text);
+  LKS.total = chunks.length; LKS.queued = true;
+  lkSpeakUi();
+  chunks.forEach((c, i) => T.worker.postMessage({type:'gen', id:`s${sid}:${i}`, epoch:T.epoch, text:c, voice:T.voice, speed:1}));
+}
+function lkGot(m){
+  const [sid, i] = m.id.slice(1).split(':').map(Number);
+  if (sid !== LKS.sid || LKS.state === 'idle') return;
+  LKS.parts[i] = wavUrl(m.samples, m.rate);
+  lkPlayNext();
+}
+function lkFail(m){
+  if (+m.id.slice(1).split(':')[0] === LKS.sid) lkSpeakStop();
+}
+function lkPlayNext(){
+  if (LKS.audio || LKS.state === 'idle') return;
+  const url = LKS.parts[LKS.play];
+  if (!url) return;
+  const a = new Audio(url);
+  a.onended = () => { LKS.audio = null; LKS.play++; if (LKS.play >= LKS.total) lkSpeakStop(); else lkPlayNext(); };
+  LKS.audio = a;
+  LKS.state = 'playing';
+  lkSpeakUi();
+  a.play().catch(() => lkSpeakStop());
+}
+$('#lkSpeak').onclick = lkSpeak;
+lkSpeakUi();
+
 
 const ttsOk = () => !(window.claude && typeof window.claude.use === 'function') && !/claudeusercontent\.com$/i.test(location.hostname) && !!(window.Worker && window.Audio);
 
@@ -3267,11 +3332,11 @@ function ttsWorker(){
     T.worker = w;
     w.onmessage = e => {
       const m = e.data;
-      if (m.type === 'progress'){ T.pct = Math.min(99, Math.floor(m.loaded / m.total * 100)); if (T.state === 'loading') ttsUi(); }
+      if (m.type === 'progress'){ T.pct = Math.min(99, Math.floor(m.loaded / m.total * 100)); if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
       else if (m.type === 'ready') res();
       else if (m.type === 'error'){ T.ready = null; T.worker = null; w.terminate(); rej(new Error('load')); }
-      else if (m.type === 'audio') ttsGot(m);
-      else if (m.type === 'fail' && m.epoch === T.epoch){ T.asked.delete(m.id); }
+      else if (m.type === 'audio'){ if (typeof m.id === 'string') lkGot(m); else ttsGot(m); }
+      else if (m.type === 'fail'){ if (typeof m.id === 'string') lkFail(m); else if (m.epoch === T.epoch) T.asked.delete(m.id); }
     };
     w.onerror = () => { T.ready = null; T.worker = null; rej(new Error('load')); };
     gpuOk().then(gpu => w.postMessage({type:'load', gpu}));
@@ -3347,8 +3412,9 @@ function ttsMark(si){
 }
 
 function ttsPlay(i){
-  if (i >= T.units.length){ ttsStop(); return; }
+  if (i >= T.units.length){ S.lu = S.ln = null; ttsStop(); return; }
   T.u = i;
+  S.lu = i; S.ln = T.units.length;
   ttsTrim();
   pdfProgress();
   readEta();
@@ -3377,7 +3443,9 @@ function ttsFirstUnit(){
 
 async function ttsStart(){
   if (T.state !== 'idle' || !T.units.length) return;
+  if (LKS.state !== 'idle') lkSpeakStop();
   T.u = ttsFirstUnit();
+  if (S.lu != null && S.ln === T.units.length && S.lu < T.units.length && Math.abs((T.uw[S.lu] || 0) - (T.uw[T.u] || 0)) <= 600) T.u = S.lu;
   T.state = 'loading';
   ttsUi();
   try { await ttsWorker(); } catch { ttsStop(); return; }
@@ -3389,6 +3457,7 @@ async function ttsStart(){
 
 function ttsStop(){
   const was = T.state;
+  if (LKS.state === 'loading') lkSpeakStop();
   T.state = 'idle';
   T.epoch++;
   if (T.worker) T.worker.postMessage({type:'epoch', epoch:T.epoch});
@@ -3405,10 +3474,12 @@ function ttsPause(){
   T.state = 'paused';
   if (T.src) T.src.pause();
   ttsUi();
+  savePos();
 }
 
 function ttsResume(){
   if (T.state !== 'paused') return;
+  if (LKS.state !== 'idle') lkSpeakStop();
   T.state = 'playing';
   ttsUi();
   if (T.src) T.src.play().catch(() => {});
@@ -3431,6 +3502,7 @@ function ttsSpeed(){
 function ttsJump(u, resume, clear){
   if (T.state !== 'playing' && T.state !== 'paused') return;
   T.u = u;
+  S.lu = u; S.ln = T.units.length;
   T.epoch++;
   T.worker.postMessage({type:'epoch', epoch:T.epoch});
   if (T.src){ T.src.onended = null; T.src.pause(); T.src = null; }
