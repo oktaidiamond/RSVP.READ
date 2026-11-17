@@ -218,7 +218,7 @@ textarea:focus{border-color:var(--muted)}
 .rmenu button.ai .ic{color:var(--accent2)}
 .rmenu hr{border:0;border-top:1px solid var(--border);margin:4px 2px}
 
-.tooltip{position:fixed;z-index:200;background:var(--text);color:var(--bg);font-size:11.5px;font-weight:500;padding:5px 9px;border-radius:6px;pointer-events:none;opacity:0;transform:translateY(3px);transition:opacity .15s,transform .15s;white-space:nowrap}
+.tooltip{position:fixed;z-index:400;background:var(--surface2);color:var(--text);border:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.35);font-size:12px;font-weight:500;padding:5px 9px;border-radius:7px;pointer-events:none;opacity:0;transform:translateY(3px);transition:opacity .15s,transform .15s;white-space:nowrap}
 .tooltip.show{opacity:1;transform:translateY(0)}
 
 .fade-up{animation:fadeUp .55s cubic-bezier(.2,.7,.2,1) both}
@@ -269,7 +269,7 @@ body.focus.ticker-on .ticker{opacity:1;visibility:visible;transform:translate(-5
 body.no-ai .btn.ai{display:none!important}
 .grp{display:inline-flex;align-items:center;gap:6px}
 body.focus .focus-controls .val.sz{min-width:46px}
-.focus-controls .btn.on{border-color:var(--accent);color:var(--accent)}
+.btn.on{border-color:var(--accent);color:var(--accent)}
 
 .reading,.lookup{display:none}
 body.read-mode header,body.read-mode .main{display:none!important}
@@ -297,7 +297,10 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .read-controls .icon-btn{width:30px;height:30px}
 .read-controls .icon-btn svg{width:15px;height:15px}
 .read-controls .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);min-width:46px;text-align:center}
-.read-controls .btn.on{border-color:var(--accent);color:var(--accent)}
+.tx-sync{position:fixed;z-index:40;transform:translateX(-50%);pointer-events:none}
+.tx-sync[hidden]{display:none}
+.tx-sync .btn{pointer-events:auto;background:var(--surface2);box-shadow:0 4px 16px rgba(0,0,0,.4);animation:fadeIn .15s ease}
+.tx-sync.up .ic{transform:rotate(180deg)}
 .pdf-sync{position:absolute;left:0;right:0;z-index:5;display:flex;justify-content:center;pointer-events:none}
 .pdf-sync .btn{pointer-events:auto;background:var(--surface2);box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .pdf-sync.up{top:14px}
@@ -305,13 +308,20 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .pdf-sync.up .ic{transform:rotate(180deg)}
 body.pdf-mode.pdf-split .pdf-sync{right:var(--txw)}
 .read-left{position:absolute;top:16px;left:16px;z-index:6;display:flex;gap:8px;align-items:center}
-body.is-fs .read-fs,body.is-fs .fs-focus{display:none!important}
+.seg{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;height:30px;padding:2px;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border)}
+.seg[hidden]{display:none}
+.seg button{position:relative;z-index:1;min-width:46px;padding:0 12px;border-radius:7px;font-size:12px;font-weight:500;color:var(--muted);transition:color .2s}
+.seg button:hover{color:var(--text)}
+.seg[data-v=pdf] button[data-v=pdf],.seg[data-v=text] button[data-v=text]{color:var(--text)}
+.seg-pill{position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px) / 2);border-radius:7px;background:var(--surface);box-shadow:0 0 0 1px var(--border);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.seg[data-v=text] .seg-pill{transform:translateX(100%)}
+.seg.busy{opacity:.6;pointer-events:none}
 .read-top{position:absolute;top:16px;right:16px;z-index:6;display:flex;gap:8px;align-items:center}
 .read-dock::before{content:'';position:absolute;inset:-28px 0 0;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 6%,transparent) 20%,color-mix(in srgb,var(--bg) 22%,transparent) 45%,color-mix(in srgb,var(--bg) 50%,transparent) 70%,color-mix(in srgb,var(--bg) 72%,transparent));opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
 .pdf-view{position:absolute;inset:0 0 var(--dockh,104px);overflow:auto;display:none;outline:none;padding:64px 16px 24px;scrollbar-width:none}
 .pdf-view::-webkit-scrollbar{display:none}
 body.pdf-mode .pdf-view{display:block}
-body.pdf-mode .read-scroll,body.pdf-mode #tocBtn,body.pdf-mode .read-controls .font-dd{display:none}
+body.pdf-mode .read-scroll,body.pdf-mode #tocBtn{display:none}
 :root{--txw:min(440px,40vw)}
 .tx-div{display:none;position:absolute;top:56px;bottom:var(--dockh,104px);right:var(--txw);width:14px;margin-right:-7px;cursor:col-resize;z-index:6;touch-action:none}
 .tx-div::after{content:'';position:absolute;top:0;bottom:0;left:6px;width:2px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
@@ -358,14 +368,25 @@ body.tts-active .ts:hover{background:color-mix(in srgb,var(--accent) 11%,transpa
 body.tts-active .ts.on:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
 .read-controls .dropdown{flex:0 0 168px;min-width:0}
 body.focus .focus-controls .dropdown{flex:0 0 168px;min-width:0}
-.read-controls .dropdown.tts-dd{flex:0 0 108px;min-width:0}
-.read-controls .dropdown.tts-sp{flex:0 0 78px}
-.read-controls .dropdown.tts-vol{flex:0 0 104px}
-.tts-vol .dd-btn{gap:6px}
-.tts-vol .dd-btn .tts-label{flex:1;text-align:left}
-.tts-vol .vol-ic{width:15px;height:15px;color:var(--muted);flex:none}
-.tts-sp .dd-list{min-width:0;width:100%}
-.tts-sp .dd-item>span:first-child{white-space:nowrap}
+.bv-btn{position:relative;width:34px;padding:0}
+.bv-btn .ic{width:15px;height:15px}
+.bv{position:absolute;right:-7px;bottom:-6px;min-width:20px;height:14px;padding:0 4px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9px;font-weight:500;line-height:12px;text-align:center;color:var(--text);letter-spacing:0;pointer-events:none}
+body.tts-active .btn.tts-on{display:inline-flex!important}
+.dock-pop{width:224px}
+.dock-pop .tp-label.tp-gap{margin-top:14px}
+.dock-pop .tp-label.tp-row{display:flex;justify-content:space-between}
+.dock-pop .tp-label.tp-row span:last-child{color:var(--text);text-transform:none;letter-spacing:.04em}
+.dock-pop .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:center}
+.lbl-z{display:none}
+body.pdf-mode .lbl-z{display:inline}
+body.pdf-mode .lbl-t{display:none}
+.dock-pop .grp{display:flex;justify-content:space-between;width:100%}
+.dock-pop .grp .val{flex:1;min-width:0}
+.dock-pop .dropdown{flex:none;width:100%;min-width:0}
+.dock-pop .dd-btn{height:30px;font-size:13px}
+.dock-pop .dd-list{left:0;right:0;min-width:0}
+.dock-pop input[type=range]{width:100%;background:color-mix(in srgb,var(--muted) 35%,transparent);margin:4px 0 0}
+body.pdf-mode #rAaPop .font-dd,body.pdf-mode #rAaPop .fontrow{display:none}
 .tts-dd .dd-list{left:auto;right:0;min-width:100%;max-height:60vh;overflow-y:auto}
 .tts-dd:not(.tts-sp) .dd-list{min-width:150px}
 .dd-head{padding:8px 10px 3px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -471,6 +492,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 <symbol id="ic-caret" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 <symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
 <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+<symbol id="ic-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
 <symbol id="ic-speaker" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></symbol>
 <symbol id="ic-up" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></symbol>
 <symbol id="ic-rename" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></symbol>
@@ -482,8 +504,8 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
   <div class="header-left">
     <h1>RSVP<span class="title-dot">.</span>READ</h1>
     <nav class="mode-nav">
-      <button class="btn mode-btn" id="focusBtn" title="Focus"><svg class="ic"><use href="#ic-focus"/></svg><span>Focus</span></button>
-      <button class="btn mode-btn" id="readBtn" title="Read"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4H9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5h-6A1.5 1.5 0 0 1 2 16z"/><path d="M22 5.5A1.5 1.5 0 0 0 20.5 4H15a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5h6a1.5 1.5 0 0 0 1.5-1.5z"/></svg><span>Read</span></button>
+      <button class="btn mode-btn" id="focusBtn"><svg class="ic"><use href="#ic-focus"/></svg><span>Focus</span></button>
+      <button class="btn mode-btn" id="readBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4H9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5h-6A1.5 1.5 0 0 1 2 16z"/><path d="M22 5.5A1.5 1.5 0 0 0 20.5 4H15a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5h6a1.5 1.5 0 0 0 1.5-1.5z"/></svg><span>Read</span></button>
     </nav>
   </div>
   <div class="header-actions">
@@ -519,21 +541,17 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
       <div class="seek focus-seek" id="focusSeek"><div class="focus-bar" id="focusBar"><i id="focusFill"></i></div><span class="knob" id="focusKnob"></span></div>
       <div class="transport">
         <button class="btn" id="back10"><span class="full"><svg class="ic"><use href="#ic-sb"/></svg> -10</span><span class="ico"><svg class="ic"><use href="#ic-sb"/></svg></span></button>
-        <button class="btn" id="back1"><svg class="ic"><use href="#ic-l"/></svg></button>
+        <button class="btn" id="back1" title="Previous word"><svg class="ic"><use href="#ic-l"/></svg></button>
         <button class="btn primary play" id="playBtn"><span class="full" id="playFull"><svg class="ic"><use href="#ic-play"/></svg> Play</span><span class="ico" id="playIco"><svg class="ic"><use href="#ic-play"/></svg></span></button>
-        <button class="btn" id="fwd1"><svg class="ic"><use href="#ic-r"/></svg></button>
+        <button class="btn" id="fwd1" title="Next word"><svg class="ic"><use href="#ic-r"/></svg></button>
         <button class="btn" id="fwd10"><span class="full">+10 <svg class="ic"><use href="#ic-sf"/></svg></span><span class="ico"><svg class="ic"><use href="#ic-sf"/></svg></span></button>
       </div>
 
       <div class="focus-controls">
         <button class="btn sm" id="tickerBtn"><svg class="ic"><use href="#ic-text"/></svg> Text</button>
-        <span class="grp"><button class="btn sm" id="fWpmDown"><svg class="ic"><use href="#ic-minus"/></svg></button><span class="val" id="fWpm">400 WPM</span><button class="btn sm" id="fWpmUp"><svg class="ic"><use href="#ic-plus"/></svg></button></span>
-        <span class="grp"><button class="btn sm" id="fSizeDown">A−</button><span class="val sz" id="fSize">52px</span><button class="btn sm" id="fSizeUp">A+</button></span>
-        <div class="dropdown font-dd">
-          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
-          <div class="dd-list"></div>
-        </div>
-        <button class="icon-btn theme-toggle">
+        <span class="grp"><button class="btn sm" id="fWpmDown" title="Slower"><svg class="ic"><use href="#ic-minus"/></svg></button><span class="val" id="fWpm">400 WPM</span><button class="btn sm" id="fWpmUp" title="Faster"><svg class="ic"><use href="#ic-plus"/></svg></button></span>
+        <button class="btn sm" id="fAaBtn" title="Text size and font">Aa</button>
+        <button class="icon-btn theme-toggle" title="Theme">
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     </button>
@@ -578,7 +596,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
         <button class="btn primary block" id="pasteLoad"><svg class="ic"><use href="#ic-play"/></svg> Load Text into Reader</button>
         <button class="btn block" id="pasteFix" hidden><svg class="ic"><use href="#ic-text"/></svg> Fix spelling</button>
         <button class="btn ai block" id="pasteClean" hidden><svg class="ic"><use href="#ic-ai"/></svg> Clean with AI</button>
-        <div class="status" id="pasteStatus"><div class="status-row"><span class="status-text"></span><button class="status-x"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
+        <div class="status" id="pasteStatus"><div class="status-row"><span class="status-text"></span><button class="status-x" title="Dismiss"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
       </div>
 
       <div class="panel" data-panel="upload">
@@ -588,7 +606,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
           <small>.txt or .pdf — scanned PDFs use OCR</small>
           <input type="file" id="fileInput" accept=".txt,.pdf,text/plain,application/pdf" hidden>
         </div>
-        <div class="status" id="uploadStatus"><div class="status-row"><span class="status-text"></span><button class="status-x"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
+        <div class="status" id="uploadStatus"><div class="status-row"><span class="status-text"></span><button class="status-x" title="Dismiss"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
         <div class="upload-actions" id="uploadActions">
           <span class="file-name" id="fileName"></span>
           <button class="btn primary block" id="uploadLoad"><svg class="ic"><use href="#ic-play"/></svg> Load Text into Reader</button>
@@ -607,7 +625,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 
       <div class="panel" data-panel="recent">
         <div class="recent-head"><span class="label">Recently loaded</span><button class="btn sm ghost" id="clearRecent">Clear all</button></div>
-        <div class="status" id="recentStatus"><div class="status-row"><span class="status-text"></span><button class="status-x"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
+        <div class="status" id="recentStatus"><div class="status-row"><span class="status-text"></span><button class="status-x" title="Dismiss"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
         <div id="recentList" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
@@ -617,7 +635,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 <div class="focus-left"><button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button><button class="btn sm fs-focus" id="fsFocus" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button></div>
 <div class="warn" id="warn"></div>
 <div class="undo-toast" id="undoToast"><span id="undoMsg"></span><button class="btn sm" id="undoBtn">Undo</button></div>
-<div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause</div>
+<div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause · T for text</div>
 <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
 <div class="reading" id="reading">
   <div class="read-scroll" id="readScroll" tabindex="-1"><article class="read-col" id="readText"></article></div>
@@ -628,27 +646,13 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
       <div class="seek" id="readSeek"><div class="read-bar"><i id="readFill"></i></div><span class="knob" id="readKnob"></span></div>
       <div class="read-controls">
         <button class="btn sm" id="tocBtn"><svg class="ic"><use href="#ic-text"/></svg> Contents</button>
-        <span class="grp"><button class="btn sm" id="rSizeDown">A−</button><span class="val" id="rSize">19px</span><button class="btn sm" id="rSizeUp">A+</button></span>
-        <div class="dropdown font-dd">
-          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
-          <div class="dd-list"></div>
-        </div>
+        <button class="btn sm" id="rAaBtn" title="Text size and font">Aa</button>
         <button class="btn sm tts-skip" id="ttsBack" title="Back"><svg class="ic"><use href="#ic-sb"/></svg></button>
         <button class="btn sm tts-ui" id="ttsBtn"></button>
         <button class="btn sm tts-skip" id="ttsFwd" title="Forward"><svg class="ic"><use href="#ic-sf"/></svg></button>
-        <div class="dropdown tts-ui tts-on tts-dd tts-sp" id="ttsSpDd">
-          <button class="dd-btn"><span class="tts-label">1x</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
-          <div class="dd-list"></div>
-        </div>
-        <div class="dropdown tts-ui tts-on tts-dd tts-sp tts-vol" id="ttsVolDd">
-          <button class="dd-btn"><svg class="ic vol-ic"><use href="#ic-speaker"/></svg><span class="tts-label">100%</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
-          <div class="dd-list"></div>
-        </div>
-        <div class="dropdown tts-ui tts-on tts-dd" id="ttsDd">
-          <button class="dd-btn"><span class="tts-label">Heart</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
-          <div class="dd-list"></div>
-        </div>
-        <button class="icon-btn theme-toggle">
+        <button class="btn sm bv-btn tts-ui tts-on" id="spBtn" title="Speed"><svg class="ic"><use href="#ic-gauge"/></svg><span class="bv" id="spVal">1x</span></button>
+        <button class="btn sm bv-btn tts-ui tts-on" id="volBtn" title="Volume and voice"><svg class="ic"><use href="#ic-speaker"/></svg><span class="bv" id="volVal">100%</span></button>
+        <button class="icon-btn theme-toggle" title="Theme">
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     </button>
@@ -662,7 +666,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
   <div class="read-left"><button class="btn sm" id="exitRead"><svg class="ic"><use href="#ic-x"/></svg> Exit</button><button class="btn sm read-fs" id="fsBtn" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button></div>
   <div class="read-top">
     <button class="btn sm" id="pdfTx" hidden>Transcript</button>
-    <button class="btn sm" id="pdfBtn" hidden>PDF view</button>
+    <div class="seg" id="pdfBtn" data-v="text" hidden><i class="seg-pill"></i><button data-v="pdf">PDF</button><button data-v="text">Text</button></div>
   </div>
   <div class="hint hint-read" id="hintRead"></div>
 </div>
@@ -673,6 +677,38 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
   <button class="btn ai sm lk-explain" id="lkExplain"><svg class="ic"><use href="#ic-ai"/></svg> Ask AI</button>
 </div>
 <div class="tooltip" id="tooltip"></div>
+
+<div class="theme-pop dock-pop" id="fAaPop" hidden>
+  <div class="tp-label">Text size</div>
+  <span class="grp"><button class="btn sm" id="fSizeDown">A−</button><span class="val sz" id="fSize">52px</span><button class="btn sm" id="fSizeUp">A+</button></span>
+  <div class="tp-label tp-gap">Font</div>
+  <div class="dropdown font-dd">
+          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
+          <div class="dd-list"></div>
+        </div>
+</div>
+<div class="theme-pop dock-pop" id="rAaPop" hidden>
+  <div class="tp-label"><span class="lbl-t">Text size</span><span class="lbl-z">Zoom</span></div>
+  <span class="grp"><button class="btn sm" id="rSizeDown">A−</button><span class="val" id="rSize">19px</span><button class="btn sm" id="rSizeUp">A+</button></span>
+  <div class="tp-label tp-gap fontrow">Font</div>
+  <div class="dropdown font-dd">
+          <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
+          <div class="dd-list"></div>
+        </div>
+</div>
+<div class="theme-pop dock-pop" id="spPop" hidden>
+  <div class="tp-label tp-row"><span>Speed</span><span id="spNum">1x</span></div>
+  <input type="range" id="spRange" min="0.5" max="3" step="0.25" value="1">
+</div>
+<div class="theme-pop dock-pop" id="volPop" hidden>
+  <div class="tp-label tp-row"><span>Volume</span><span id="volNum">100%</span></div>
+  <input type="range" id="volRange" min="0" max="200" step="5" value="100">
+  <div class="tp-label tp-gap">Voice</div>
+  <div class="dropdown tts-dd" id="ttsDd">
+    <button class="dd-btn"><span class="tts-label">Heart</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
+    <div class="dd-list"></div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.2/tesseract.min.js"></script>
@@ -1082,27 +1118,39 @@ function themeSync(){
     b.classList.toggle('sel', b.dataset.a === acc);
   });
 }
-function themeClose(){ themePop.hidden = true; }
+const POPS = () => $$('.theme-pop');
+function themeClose(){ POPS().forEach(p => { p.hidden = true; }); }
+function popOpen(btn, pop, sync){
+  if (!pop.hidden && pop._for === btn){ themeClose(); return; }
+  themeClose();
+  pop._for = btn;
+  if (sync) sync();
+  pop.hidden = false;
+  const r = btn.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+  const x = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  const y = r.top > innerHeight / 2 ? r.top - h - 8 : r.bottom + 8;
+  pop.style.left = x + 'px';
+  pop.style.top = Math.max(8, y) + 'px';
+}
 themePop.addEventListener('click', e => {
   const m = e.target.closest('[data-m]'), a = e.target.closest('[data-a]');
   if (m) document.body.classList.toggle('light-mode', m.dataset.m === 'light');
   if (a){ if (a.dataset.a === 'red') delete document.body.dataset.accent; else document.body.dataset.accent = a.dataset.a; }
   if (m || a){ themeSave(); themeSync(); }
 });
-$$('.theme-toggle').forEach(b => b.onclick = e => {
-  e.stopPropagation();
-  if (!themePop.hidden && themePop._for === b){ themeClose(); return; }
-  themePop._for = b;
-  themeSync();
-  themePop.hidden = false;
-  const r = b.getBoundingClientRect(), w = themePop.offsetWidth, h = themePop.offsetHeight;
-  const x = Math.max(8, Math.min(innerWidth - w - 8, r.right - w));
-  const y = r.top > innerHeight / 2 ? r.top - h - 8 : r.bottom + 8;
-  themePop.style.left = x + 'px';
-  themePop.style.top = Math.max(8, y) + 'px';
-});
-document.addEventListener('mousedown', e => { if (!themePop.hidden && !themePop.contains(e.target) && !e.target.closest('.theme-toggle')) themeClose(); }, true);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !themePop.hidden){ e.stopImmediatePropagation(); themeClose(); } }, true);
+$$('.theme-toggle').forEach(b => b.onclick = e => { e.stopPropagation(); popOpen(b, themePop, themeSync); });
+const POP_BTNS = '.theme-toggle,#rAaBtn,#fAaBtn,#spBtn,#volBtn';
+document.addEventListener('mousedown', e => {
+  if (e.target.closest('.theme-pop') || e.target.closest(POP_BTNS)) return;
+  themeClose();
+}, true);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && POPS().some(p => !p.hidden)){ e.stopImmediatePropagation(); themeClose(); }
+}, true);
+$('#rAaBtn').onclick = () => popOpen($('#rAaBtn'), $('#rAaPop'));
+$('#fAaBtn').onclick = () => popOpen($('#fAaBtn'), $('#fAaPop'));
+$('#spBtn').onclick = () => popOpen($('#spBtn'), $('#spPop'), spSync);
+$('#volBtn').onclick = () => popOpen($('#volBtn'), $('#volPop'), volSync);
 
 function enterFocus(){
   if (S.focus) return;
@@ -1149,10 +1197,12 @@ $('#exitFocus').onclick = () => exitFocus();
 $('#tickerBtn').onclick = () => setTicker(!S.ticker);
 els.stage.addEventListener('transitionend', e => { if (e.target === els.stage && S.focus) recenterTicker(true); });
 function toggleFs(){
-  if (document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+  if (document.fullscreenElement){ document.exitFullscreen().catch(() => {}); return; }
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
 }
 document.addEventListener('fullscreenchange', () => {
   document.body.classList.toggle('is-fs', !!document.fullscreenElement);
+  $$('#fsBtn,#fsFocus').forEach(b => { b.title = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen'; b.classList.toggle('on', !!document.fullscreenElement); });
 });
 $('#fsBtn').onclick = toggleFs;
 $('#fsFocus').onclick = toggleFs;
@@ -1191,6 +1241,9 @@ document.addEventListener('keydown', e => {
     case '+': case '=': setSize(S.size + 4); break;
     case '-': case '_': setSize(S.size - 4); break;
     case 'Escape': exitFocus(); break;
+    case 't': case 'T': if (S.focus) setTicker(!S.ticker); break;
+    case 'r': case 'R': if (!S.focus) enterReading(); break;
+    case 'f': case 'F': if (!S.focus) enterFocus(); break;
   }
 });
 
@@ -2727,7 +2780,7 @@ function pdfProgress(){
   const cur = PV.cur = pdfPageAt(top + pdfEl.clientHeight * 0.25);
   const voice = pdfVoiceActive();
   const max = pdfEl.scrollHeight - pdfEl.clientHeight;
-  const frac = PV.drag != null ? PV.drag : voice ? T.u / Math.max(1, T.units.length) : (max > 0 ? Math.min(1, pdfEl.scrollTop / max) : 1);
+  const frac = PV.drag != null ? PV.drag : (max > 0 ? Math.min(1, pdfEl.scrollTop / max) : 1);
   rEls.fill.style.width = $('#readKnob').style.left = (frac * 100) + '%';
   rEls.pct.textContent = (voice ? ttsEta() + ' · ' : '') + Math.round(frac * 100) + '%';
   rEls.chapter.textContent = `Page ${cur} of ${PV.n}`;
@@ -2740,13 +2793,12 @@ function pdfProgress(){
 
 function pdfSeekPreview(frac){
   PV.drag = frac;
-  if (!pdfVoiceActive()) pdfEl.scrollTop = frac * (pdfEl.scrollHeight - pdfEl.clientHeight);
+  pdfEl.scrollTop = frac * (pdfEl.scrollHeight - pdfEl.clientHeight);
   pdfProgress();
 }
 
 function pdfSeekCommit(frac){
   PV.drag = null;
-  if (pdfVoiceActive() && T.units.length) ttsJump(Math.min(T.units.length - 1, Math.floor(frac * T.units.length)), false, true);
   pdfProgress();
 }
 
@@ -2761,8 +2813,7 @@ async function setPdfMode(on){
   if (!on){
     const was = inPdf();
     document.body.classList.remove('pdf-mode');
-    btn.textContent = 'PDF view';
-    btn.classList.remove('on');
+    btn.dataset.v = 'text';
     $('#pdfSyncWrap').hidden = true;
     $('#pdfTx').hidden = true;
     $('#rSize').textContent = S.rsize + 'px';
@@ -2771,16 +2822,14 @@ async function setPdfMode(on){
     return;
   }
   if (!S.pdf) return;
-  btn.disabled = true;
-  btn.textContent = 'Opening…';
+  btn.classList.add('busy');
   let ok = false;
   const at = pdfVoiceActive() ? pdfVoiceFrac() : S.idx / Math.max(1, S.words.length);
   try { ok = await pdfOpen(); } catch { ok = false; }
-  btn.disabled = false;
-  if (!ok){ btn.textContent = 'PDF view'; btn.hidden = !S.pdf; return; }
+  btn.classList.remove('busy');
+  if (!ok){ btn.hidden = !S.pdf; return; }
   document.body.classList.add('pdf-mode');
-  btn.textContent = 'Text view';
-  btn.classList.add('on');
+  btn.dataset.v = 'pdf';
   $('#pdfTx').hidden = !ttsOk();
   $('#rSize').textContent = Math.round(PV.zoom * 100) + '%';
   pdfGoto(pdfPageOf(at));
@@ -2788,7 +2837,12 @@ async function setPdfMode(on){
   requestAnimationFrame(pdfProgress);
 }
 
-$('#pdfBtn').onclick = () => setPdfMode(!inPdf());
+$('#pdfBtn').onclick = e => {
+  const b = e.target.closest('button[data-v]');
+  if (!b) return;
+  const pdf = b.dataset.v === 'pdf';
+  if (pdf !== inPdf()) setPdfMode(pdf);
+};
 $('#pdfSync').onclick = () => pdfGoto(pdfPageOf(pdfVoiceFrac()), true);
 (() => {
   const d = $('#txDiv');
@@ -2893,8 +2947,6 @@ function enterReading(){
   h.style.animation = 'none'; h.offsetHeight; h.style.animation = '';
   scrollReadToWord(S.idx);
   if (S.pdf && S.pdfView) setPdfMode(true);
-  const req = document.documentElement.requestFullscreen;
-  if (req && !document.fullscreenElement) req.call(document.documentElement).catch(()=>{});
   requestAnimationFrame(() => { R.cur = -2; updateReadProgress(); rEls.scroll.focus({preventScroll:true}); });
 }
 
@@ -3437,6 +3489,46 @@ function ttsReset(){
 
 const TTS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
 
+const txSyncEl = document.createElement('div');
+txSyncEl.className = 'tx-sync';
+txSyncEl.hidden = true;
+txSyncEl.innerHTML = '<button class="btn sm"><svg class="ic"><use href="#ic-caret"/></svg>Jump to voice</button>';
+document.body.appendChild(txSyncEl);
+function txSyncPlace(el){
+  const sc = rEls.scroll;
+  const split = inPdf() && document.body.classList.contains('pdf-split');
+  const v = sc.getBoundingClientRect();
+  const vh = split ? sc.clientHeight : sc.clientHeight - ($('.read-dock-inner').offsetHeight + 18);
+  return {sc, split, v, vh};
+}
+function txSync(){
+  const el = T.sp[T.cur];
+  const live = S.reading && T.state !== 'idle' && T.cur >= 0 && el && !(inPdf() && !document.body.classList.contains('pdf-split'));
+  if (!live){ txSyncEl.hidden = true; return; }
+  const {v, vh} = txSyncPlace(el);
+  const rs = el.getClientRects();
+  if (!rs.length){ txSyncEl.hidden = true; return; }
+  const top = rs[0].top - v.top, bottom = rs[rs.length - 1].bottom - v.top;
+  const dir = bottom < 0 ? 'up' : top > vh ? 'down' : '';
+  if (!dir){ txSyncEl.hidden = true; return; }
+  txSyncEl.hidden = false;
+  txSyncEl.className = 'tx-sync ' + dir;
+  txSyncEl.style.left = (v.left + v.width / 2) + 'px';
+  txSyncEl.style.top = (dir === 'up' ? v.top + 64 : v.top + vh - 44) + 'px';
+}
+txSyncEl.querySelector('button').onclick = () => {
+  const el = T.sp[T.cur];
+  if (!el) return;
+  const {sc, split, v, vh} = txSyncPlace(el);
+  const rs = el.getClientRects();
+  if (!rs.length) return;
+  const top = rs[0].top - v.top;
+  sc.scrollTo({top:sc.scrollTop + top - vh * (split ? 0.35 : 0.25), behavior:reduceMotion() ? 'auto' : 'smooth'});
+};
+new MutationObserver(txSync).observe(document.body, {attributes:true, attributeFilter:['class']});
+rEls.scroll.addEventListener('scroll', () => requestAnimationFrame(txSync));
+window.addEventListener('resize', txSync);
+
 function ttsUi(){
   const b = tEls.btn;
   b.innerHTML = T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`;
@@ -3444,6 +3536,8 @@ function ttsUi(){
   document.body.classList.toggle('tts-active', T.state !== 'idle');
   pdfProgress();
   readEta();
+  txSync();
+  if (T.state === 'idle') $$('#spPop,#volPop').forEach(p => { p.hidden = true; });
 }
 
 async function gpuOk(){
@@ -3528,7 +3622,7 @@ function ttsMark(si){
   if (!el) return;
   el.classList.add('on');
   const rs = el.getClientRects();
-  if (!following || !rs.length) return;
+  if (!following || !rs.length){ txSync(); return; }
   const top = rs[0].top - v.top, bottom = rs[rs.length - 1].bottom - v.top;
   const tall = bottom - top > vh * 0.6;
   if (top > vh * 0.6 || bottom > vh || top < 24){
@@ -3691,9 +3785,19 @@ function ttsDropdown(dd, items, get, set){
   document.addEventListener('click', e => { if (!dd.contains(e.target)) dd.classList.remove('open'); });
   sync();
 }
+const spFmt = v => v + 'x';
+function spSync(){
+  $('#spVal').textContent = $('#spNum').textContent = spFmt(T.speed);
+  $('#spRange').value = T.speed;
+}
+$('#spRange').oninput = e => { T.speed = +e.target.value; ttsSpeed(); spSync(); };
+function volSync(){
+  $('#volVal').textContent = $('#volNum').textContent = T.vol + '%';
+  $('#volRange').value = T.vol;
+}
+$('#volRange').oninput = e => { T.vol = +e.target.value; applyVol(T.src); applyVol(LKS.audio); volSync(); };
+spSync(); volSync();
 ttsDropdown($('#ttsDd'), TTS_VOICES.map(v => ({v:v[0], label:v[1], group:v[2]})), () => T.voice, v => { T.voice = v; ttsRetune(); });
-ttsDropdown($('#ttsVolDd'), [200,175,150,125,100,75,50,25,0].map(v => ({v, label:v + '%'})), () => T.vol, v => { T.vol = v; applyVol(T.src); applyVol(LKS.audio); });
-ttsDropdown($('#ttsSpDd'), [...TTS_SPEEDS].reverse().map(v => ({v, label:v + 'x', html:Number.isInteger(v) ? `<span class="sp-whole">${v}x</span>` : `<span class="sp-frac">${v}x</span>`})), () => T.speed, v => { T.speed = v; ttsSpeed(); });
 ttsUi();
 
 const checkAI = () => { document.body.classList.toggle('no-ai', !(window.claude && typeof window.claude.use === 'function')); document.body.classList.toggle('no-tts', !ttsOk()); };
