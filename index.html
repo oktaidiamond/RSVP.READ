@@ -249,10 +249,13 @@ body.focus .exit-focus{display:inline-flex}
 body.focus .focus-left{display:flex;gap:8px;position:fixed;top:16px;left:16px;z-index:50}
 .fs-focus{display:none}
 body.focus .fs-focus{display:inline-flex}
-.warn{position:fixed;top:22px;left:50%;transform:translate(-50%,-6px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);font-size:13px;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s}
-.undo-toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,8px);display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;padding:8px 8px 8px 14px;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s}
+.warn,.undo-toast{position:fixed;top:22px;left:50%;transform:translate(-50%,-8px);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s,top .2s}
+.warn{padding:8px 14px}
+.warn.err{border-color:var(--accent)}
+.undo-toast{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px}
 .undo-toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
 .warn.show{opacity:1;transform:translate(-50%,0)}
+body:has(.undo-toast.show) .warn{top:72px}
 .hint{position:fixed;top:22px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12.5px;pointer-events:none;white-space:nowrap;z-index:55}
 body.focus .hint-focus,body.read-mode .hint-read{display:block;animation:hintOut 3.5s ease forwards}
 body.focus.ticker-on .stage{height:34vh;min-height:180px}
@@ -316,6 +319,10 @@ body.pdf-mode.pdf-split .pdf-sync{right:var(--txw)}
 .seg-pill{position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px) / 2);border-radius:7px;background:var(--surface);box-shadow:0 0 0 1px var(--border);transition:transform .22s cubic-bezier(.4,0,.2,1)}
 .seg[data-v=text] .seg-pill{transform:translateX(100%)}
 .seg.busy{opacity:.6;pointer-events:none}
+body.ui-hidden .transport,body.ui-hidden .focus-controls,body.ui-hidden .focus-seek,body.ui-hidden .focus-left,body.ui-hidden .read-dock,body.ui-hidden .read-left,body.ui-hidden .read-top,body.ui-hidden .tx-sync,body.ui-hidden .pdf-sync,body.ui-hidden .tx-bar,body.ui-hidden .hint{opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:opacity .25s,visibility 0s .25s!important}
+body.ui-hidden{--dockh:0px}
+body.ui-hidden:not(.pdf-split) .read-scroll{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 12%,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 12%,#000 88%,transparent 100%)}
+body.focus .reader-inner{transition:transform .3s ease}
 .read-top{position:absolute;top:16px;right:16px;z-index:6;display:flex;gap:8px;align-items:center}
 .read-dock::before{content:'';position:absolute;inset:-28px 0 0;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 6%,transparent) 20%,color-mix(in srgb,var(--bg) 22%,transparent) 45%,color-mix(in srgb,var(--bg) 50%,transparent) 70%,color-mix(in srgb,var(--bg) 72%,transparent));opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
 .pdf-view{position:absolute;inset:0 0 var(--dockh,104px);overflow:auto;display:none;outline:none;padding:64px 16px 24px;scrollbar-width:none}
@@ -635,7 +642,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 <div class="focus-left"><button class="btn sm exit-focus" id="exitFocus"><svg class="ic"><use href="#ic-x"/></svg> Exit</button><button class="btn sm fs-focus" id="fsFocus" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button></div>
 <div class="warn" id="warn"></div>
 <div class="undo-toast" id="undoToast"><span id="undoMsg"></span><button class="btn sm" id="undoBtn">Undo</button></div>
-<div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause · T for text</div>
+<div class="hint hint-focus" id="hint">Esc to exit · Space to play/pause · T for text · H to hide controls</div>
 <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
 <div class="reading" id="reading">
   <div class="read-scroll" id="readScroll" tabindex="-1"><article class="read-col" id="readText"></article></div>
@@ -919,15 +926,31 @@ function centerTicker(span){
 }
 
 let warnTimer = 0;
-function warn(msg){
+function warn(msg, err){
   const w = $('#warn');
   w.textContent = msg;
+  w.classList.toggle('err', !!err);
   w.classList.add('show');
   clearTimeout(warnTimer);
   warnTimer = setTimeout(() => w.classList.remove('show'), 2200);
 }
+function uiCenter(){
+  const inner = $('.reader-inner');
+  if (!inner) return;
+  if (S.focus && document.body.classList.contains('ui-hidden') && !S.ticker){
+    inner.style.transform = `translateY(${Math.round((inner.offsetHeight - els.stage.offsetHeight) / 2)}px)`;
+  } else inner.style.transform = '';
+}
+window.addEventListener('resize', () => { if (document.body.classList.contains('ui-hidden')) uiCenter(); });
+function toggleUi(){
+  if (!S.focus && !S.reading) return;
+  const on = document.body.classList.toggle('ui-hidden');
+  if (typeof themeClose === 'function') themeClose();
+  uiCenter();
+  if (on) warn('Controls hidden · press H to show');
+}
 function play(){
-  if (!S.words.length){ warn('Load some text first'); return; }
+  if (!S.words.length){ warn('Load some text first', true); return; }
   if (S.done){ S.idx = 0; S.done = false; }
   S.playing = true;
   updatePlayUI();
@@ -1154,7 +1177,7 @@ $('#volBtn').onclick = () => popOpen($('#volBtn'), $('#volPop'), volSync);
 
 function enterFocus(){
   if (S.focus) return;
-  if (!S.words.length){ warn('Load some text first'); return; }
+  if (!S.words.length){ warn('Load some text first', true); return; }
   hideTip();
   S.focus = true;
   document.body.classList.add('focus');
@@ -1167,13 +1190,15 @@ function exitFocus(keepFs){
   if (!S.focus) return;
   S.focus = false;
   savePos();
-  document.body.classList.remove('focus');
+  document.body.classList.remove('focus', 'ui-hidden');
+  uiCenter();
   if (document.fullscreenElement && keepFs !== true) document.exitFullscreen().catch(()=>{});
   requestAnimationFrame(align);
 }
 function setTicker(on){
   S.ticker = on;
   document.body.classList.toggle('ticker-on', on);
+  uiCenter();
   $('#tickerBtn').classList.toggle('on', on);
   if (on) recenterTicker(true);
 }
@@ -1242,6 +1267,7 @@ document.addEventListener('keydown', e => {
     case '-': case '_': setSize(S.size - 4); break;
     case 'Escape': exitFocus(); break;
     case 't': case 'T': if (S.focus) setTicker(!S.ticker); break;
+    case 'h': case 'H': toggleUi(); break;
     case 'r': case 'R': if (!S.focus) enterReading(); break;
     case 'f': case 'F': if (!S.focus) enterFocus(); break;
   }
@@ -2935,7 +2961,7 @@ window.addEventListener('resize', () => {
 
 function enterReading(){
   if (S.reading || S.focus) return;
-  if (!S.words.length){ warn('Load some text first'); return; }
+  if (!S.words.length){ warn('Load some text first', true); return; }
   hideTip();
   pause();
   if (R.built !== S.docVersion) renderReading();
@@ -2943,7 +2969,7 @@ function enterReading(){
   document.body.classList.add('read-mode');
   const h = $('#hintRead');
   $('#pdfBtn').hidden = !S.pdf;
-  h.textContent = 'Esc to exit' + (ttsOk() ? ' · Space to listen/pause' : '') + (R.heads.length ? ' · T for contents' : '');
+  h.textContent = 'Esc to exit' + (ttsOk() ? ' · Space to listen/pause' : '') + (R.heads.length ? ' · T for contents' : '') + ' · H to hide controls';
   h.style.animation = 'none'; h.offsetHeight; h.style.animation = '';
   scrollReadToWord(S.idx);
   if (S.pdf && S.pdfView) setPdfMode(true);
@@ -2995,7 +3021,7 @@ function exitReading(keepFs){
   S.reading = false;
   savePos();
   setPdfMode(false);
-  document.body.classList.remove('read-mode', 'toc-open');
+  document.body.classList.remove('read-mode', 'toc-open', 'ui-hidden');
   rEls.tocBtn.classList.remove('on');
   if (document.fullscreenElement && keepFs !== true) document.exitFullscreen().catch(()=>{});
   requestAnimationFrame(align);
@@ -3021,6 +3047,7 @@ function readingKey(e){
     case 't': case 'T': if (inPdf()){ if (ttsOk()) pdfTxToggle(); } else toggleToc(); break;
     case '+': case '=': inPdf() ? pdfStep(1) : setReadSize(S.rsize + 2); break;
     case '-': case '_': inPdf() ? pdfStep(-1) : setReadSize(S.rsize - 2); break;
+    case 'h': case 'H': toggleUi(); break;
     case 'Escape': LK.open ? closeLookup() : exitReading(); break;
   }
 }
