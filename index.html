@@ -2206,8 +2206,8 @@ function openMenu(btn, e, row){
   const n = (en.hist || []).length;
   const items = [
     {t:'Rename', i:'rename', fn:() => row._rename()},
-    {t:'Copy source', i:'copy', fn:() => copySource(en)},
     {t:'Edit text', i:'edit', fn:() => editEntry(en)},
+    {t:'Copy source', i:'copy', fn:() => copySource(en)},
     {t:'Fix spelling', i:'text', fn:() => runFix(en), off:recentBusy},
     {t:'Clean with AI', fn:() => runClean(en), off:recentBusy, sure:!!en.cleaned, ai:true, i:'ai'},
     {t:n > 1 ? `Undo last change · ${n}` : 'Undo last change', i:'undo', fn:() => recentUndo(en.id), off:!n},
