@@ -84,6 +84,10 @@ body.light-mode .moon{display:none}
 .midline{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--border);opacity:.6;pointer-events:none}
 .word{position:absolute;left:0;top:50%;white-space:pre;font-family:var(--word-font),monospace;font-size:var(--word-size);font-weight:500;line-height:1;transform:translate(0,-50%);letter-spacing:0}
 .word .orp{color:var(--accent)}
+body[data-accent=mono] .word{color:var(--accent2)}
+body[data-accent=mono] .word .orp{color:var(--accent)}
+body[data-accent=mono] .toc-item:not(.cur):not(:hover){color:var(--accent2)}
+body[data-accent=mono] .dd-item:not(.sel):not(:hover){color:var(--accent2)}
 .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:15px}
 .ph-ic{width:15px;height:15px}
 
@@ -2610,12 +2614,16 @@ function updateReadProgress(){
   for (let i = 0; i < R.track.length; i++){
     if (R.track[i].el.offsetTop <= line) idx = i; else break;
   }
-  if (idx === R.cur) return;
-  R.cur = idx;
+  let sub = -1;
+  for (let i = 0; i < R.heads.length; i++){
+    if (R.heads[i].el.offsetTop <= line) sub = i; else break;
+  }
+  if (idx === R.cur && sub === R.sub) return;
+  R.cur = idx; R.sub = sub;
   rEls.chapter.textContent = idx >= 0 ? R.track[idx].label : S.title;
   const cur = idx >= 0 ? R.heads.indexOf(R.track[idx]) : -1;
-  R.tocEls.forEach((b, i) => b.classList.toggle('cur', i === cur));
-  const el = R.tocEls[cur];
+  R.tocEls.forEach((b, i) => b.classList.toggle('cur', i === cur || i === sub));
+  const el = R.tocEls[sub >= 0 ? sub : cur];
   if (el){
     const list = rEls.toc;
     if (el.offsetTop < list.scrollTop || el.offsetTop + el.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = el.offsetTop - list.clientHeight / 2;
