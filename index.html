@@ -49,7 +49,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border
 button:disabled{opacity:.45;cursor:default}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 14px;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border);font-weight:500;transition:transform .12s,background .15s,border-color .15s,color .15s}
 .btn:hover:not(:disabled){border-color:var(--muted)}
-.btn:active:not(:disabled),.icon-btn:active,.preset:active,.tab:active,.card:active{transform:scale(.96)}
+.btn:active:not(:disabled),.icon-btn:active,.tab:active,.card:active{transform:scale(.96)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.primary:hover:not(:disabled){background:#ff5252;border-color:#ff5252}
 .btn.ghost{background:transparent}
@@ -118,13 +118,10 @@ body[data-accent=mono] .dd-item:not(.sel):not(:hover){color:var(--accent2)}
 .speed-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
 .wpm-big{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:var(--accent)}
 .wpm-big small{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-left:4px;letter-spacing:.1em}
+#wpmRange{margin-bottom:2px}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--surface2);outline:none;margin:6px 0 14px;accent-color:var(--accent)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
 input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer}
-.presets{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
-.preset{height:30px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:11.5px;transition:transform .12s,background .15s,color .15s,border-color .15s}
-.preset:hover{border-color:var(--muted)}
-.preset.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 
 .font-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .size-ctl{display:flex;align-items:center;gap:6px}
@@ -298,7 +295,7 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .read-bar{height:3px;border-radius:2px;background:var(--surface2);overflow:hidden;transition:transform .15s ease}
 .seek:hover .read-bar,.seek.drag .read-bar{transform:scaleY(1.6)}
 .read-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2))}
-.read-controls{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;font-family:'DM Sans',sans-serif;font-size:14px}
+.read-controls{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:nowrap;margin-top:4px;font-family:'DM Sans',sans-serif;font-size:14px}
 .read-controls .dropdown{flex:0 1 210px;min-width:170px}
 .read-controls .dd-btn{height:30px;font-size:13px}
 .read-controls .icon-btn{width:30px;height:30px}
@@ -414,7 +411,6 @@ body.pdf-mode #rAaPop .font-dd,body.pdf-mode #rAaPop .fontrow{display:none}
 #ttsBtn svg{width:14px;height:14px;flex:none}
 .tts-on{display:none!important}
 body.tts-active .dropdown.tts-on{display:block!important}
-body.no-tts .tts-ui{display:none!important}
 .toc{position:absolute;top:0;left:0;bottom:0;width:320px;max-width:86vw;background:var(--surface);border-right:1px solid var(--border);transform:translateX(-102%);transition:transform .3s cubic-bezier(.2,.7,.2,1);z-index:5;display:flex;flex-direction:column}
 body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 .toc-head{padding:68px 18px 12px;border-bottom:1px solid var(--border)}
@@ -469,10 +465,15 @@ body.focus .transport .play .ic{width:22px;height:22px}
   body.focus .word{font-size:var(--word-size)}
   .read-controls .dropdown{flex:1 1 120px;min-width:0}
   body.focus .focus-controls .val{min-width:52px}
-  .presets{grid-template-columns:repeat(4,1fr)}
   .transport{gap:6px}
   .transport .btn{min-width:0;padding:0 10px;white-space:nowrap}
   .transport .play{width:100px}
+}
+@media (max-width:600px){
+  .read-controls{margin-left:-14px;margin-right:-14px}
+}
+@media (max-width:380px){
+  .read-controls{gap:5px;margin-left:-18px;margin-right:-18px}
 }
 @media (max-width:600px),(hover:none){
   .pdf-sync.up{top:62px}
@@ -581,7 +582,6 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
           <span class="wpm-big"><span id="wpmNum">400</span><small>WPM</small></span>
         </div>
         <input type="range" id="wpmRange" min="50" max="1200" step="25" value="400">
-        <div class="presets" id="presets"></div>
       </div>
 
       <div class="card-box font-row">
@@ -735,7 +735,6 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 const FONTS = ['DM Mono','JetBrains Mono','Fira Mono','Source Code Pro','Inconsolata','IBM Plex Mono','Space Mono'];
-const PRESETS = [100,200,300,400,500,600,800,1000];
 const RECENT_KEY = 'rsvp-recent';
 const RECENT_MAX = 20;
 const CLEAN_BATCH_CHARS = 16000;
@@ -1019,7 +1018,6 @@ function setWpm(v){
   els.wpmNum.textContent = S.wpm;
   els.wpmRange.value = S.wpm;
   els.fWpm.textContent = `${S.wpm} WPM`;
-  $$('.preset').forEach(b => b.classList.toggle('active', +b.dataset.wpm === S.wpm));
   updateProgress();
 }
 
@@ -1051,13 +1049,6 @@ function setFont(f){
   align();
   document.fonts.load(`500 ${S.size}px '${f}'`).then(() => { keepReadAnchor(() => {}); align(); }).catch(()=>{});
 }
-
-PRESETS.forEach(p => {
-  const b = document.createElement('button');
-  b.className = 'preset'; b.dataset.wpm = p; b.textContent = p;
-  b.onclick = () => setWpm(p);
-  $('#presets').appendChild(b);
-});
 
 $$('.font-dd').forEach(dd => {
   const list = dd.querySelector('.dd-list');
@@ -2925,7 +2916,7 @@ async function setPdfMode(on){
   if (!ok){ btn.hidden = !S.pdf; return; }
   document.body.classList.add('pdf-mode');
   btn.dataset.v = 'pdf';
-  $('#pdfTx').hidden = !ttsOk();
+  $('#pdfTx').hidden = false;
   $('#rSize').textContent = Math.round(PV.zoom * 100) + '%';
   if (pdfVoiceActive() && PV.keep != null){ pdfEl.scrollTop = PV.keep; pdfProgress(); }
   else pdfGoto(pdfPageOf(at));
@@ -3048,7 +3039,7 @@ function enterReading(){
   document.body.classList.add('read-mode');
   const h = $('#hintRead');
   $('#pdfBtn').hidden = !S.pdf;
-  h.textContent = 'Esc to exit' + (ttsOk() ? ' · Space to listen/pause' : '') + (R.heads.length ? ' · T for contents' : '') + ' · H to hide controls';
+  h.textContent = 'Esc to exit' + ' · Space to listen/pause' + (R.heads.length ? ' · T for contents' : '') + ' · H to hide controls';
   h.style.animation = 'none'; h.offsetHeight; h.style.animation = '';
   scrollReadToWord(S.idx);
   if (S.pdf && S.pdfView) setPdfMode(true);
@@ -3121,9 +3112,9 @@ function readingKey(e){
     case ' ':
       e.preventDefault();
       if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
-      if (ttsOk()) ttsToggle();
+      ttsToggle();
       break;
-    case 't': case 'T': if (inPdf()){ if (ttsOk()) pdfTxToggle(); } else toggleToc(); break;
+    case 't': case 'T': if (inPdf()) pdfTxToggle(); else toggleToc(); break;
     case '+': case '=': inPdf() ? pdfStep(1) : setReadSize(S.rsize + 2); break;
     case '-': case '_': inPdf() ? pdfStep(-1) : setReadSize(S.rsize - 2); break;
     case 'h': case 'H': toggleUi(); break;
@@ -3436,6 +3427,7 @@ function lkSpeakStop(){
   lkSpeakUi();
 }
 async function lkSpeak(){
+  if (ttsBlocked()) return;
   if (LKS.state !== 'idle'){ lkSpeakStop(); return; }
   const text = (LK.text || '').replace(/\s+/g, ' ').trim();
   if (!text) return;
@@ -3475,6 +3467,7 @@ $('#lkSpeak').onclick = lkSpeak;
 lkSpeakUi();
 
 
+const ttsBlocked = () => { if (ttsOk()) return false; warn("Listen isn't available in this version", true); return true; };
 const ttsOk = () => !(window.claude && typeof window.claude.use === 'function') && !/claudeusercontent\.com$/i.test(location.hostname) && !!(window.Worker && window.Audio);
 
 const TTS_VOICES = [['af_bella','Bella','US · Female'],['af_heart','Heart','US · Female'],['af_nicole','Nicole','US · Female'],['am_michael','Michael','US · Male'],['am_puck','Puck','US · Male'],['bf_emma','Emma','UK · Female'],['bm_fable','Fable','UK · Male']];
@@ -3823,6 +3816,7 @@ function ttsResume(){
 }
 
 function ttsToggle(){
+  if (ttsBlocked()) return;
   if (T.state === 'idle') ttsStart();
   else if (T.state === 'loading') ttsStop();
   else if (T.state === 'playing') ttsPause();
