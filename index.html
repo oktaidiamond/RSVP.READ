@@ -276,6 +276,7 @@ body.no-ai .btn.ai{display:none!important}
 .grp{display:inline-flex;align-items:center;gap:6px}
 body.focus .focus-controls .val.sz{min-width:46px}
 .btn.on{border-color:var(--accent);color:var(--accent)}
+.btn.primary.on{color:var(--on-accent)}
 
 .reading,.lookup{display:none}
 body.read-mode header,body.read-mode .main{display:none!important}
@@ -668,7 +669,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
         <button class="btn sm" id="tocBtn"><svg class="ic"><use href="#ic-text"/></svg> Contents</button>
         <button class="btn sm" id="rAaBtn" title="Text size and font">Aa</button>
         <button class="btn sm tts-skip" id="ttsBack" title="Back"><svg class="ic"><use href="#ic-sb"/></svg></button>
-        <button class="btn sm tts-ui" id="ttsBtn"></button>
+        <button class="btn sm primary tts-ui" id="ttsBtn"></button>
         <button class="btn sm tts-skip" id="ttsFwd" title="Forward"><svg class="ic"><use href="#ic-sf"/></svg></button>
         <button class="btn sm bv-btn tts-ui tts-on" id="spBtn" title="Speed"><svg class="ic"><use href="#ic-gauge"/></svg><span class="bv" id="spVal">1x</span></button>
         <button class="btn sm bv-btn tts-ui tts-on" id="volBtn" title="Volume and voice"><svg class="ic"><use href="#ic-speaker"/></svg><span class="bv" id="volVal">100%</span></button>
@@ -1167,7 +1168,7 @@ themePop.addEventListener('click', e => {
 });
 $$('.theme-toggle').forEach(b => b.onclick = e => { e.stopPropagation(); popOpen(b, themePop, themeSync); });
 const POP_BTNS = '.theme-toggle,#rAaBtn,#fAaBtn,#spBtn,#volBtn';
-document.addEventListener('mousedown', e => {
+document.addEventListener('pointerdown', e => {
   if (e.target.closest('.theme-pop') || e.target.closest(POP_BTNS)) return;
   themeClose();
 }, true);
@@ -1256,7 +1257,11 @@ window.addEventListener('pagehide', savePos);
 
 document.addEventListener('keydown', e => {
   const t = e.target;
-  if (t.closest && t.closest('input,textarea,select,[contenteditable="true"]')) return;
+  if (t.closest && t.closest('input,textarea,select,[contenteditable="true"]')){
+    const rng = t.matches && t.matches('input[type=range]');
+    if (!rng || /^(Arrow|Home$|End$|Page)/.test(e.key)) return;
+    t.blur();
+  }
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z') && UNDO.stack.length){ e.preventDefault(); undoRestore(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   hideTip();
@@ -3400,7 +3405,7 @@ function checkSelection(){
   openLookup(range.cloneRange(), text);
 }
 
-document.addEventListener('mousedown', e => {
+document.addEventListener('pointerdown', e => {
   if (lkEls.box.contains(e.target)) return;
   const was = LK.open;
   if (was) closeLookup();
