@@ -10,12 +10,12 @@
 <style>
 :root{
   --bg:#0d0d0f;--surface:#16161a;--surface2:#1e1e24;--border:#2a2a35;--text:#e8e8f0;--muted:#6b6b80;
-  --accent:#ff3b3b;--accent2:#ff8c42;--on-accent:#fff;--green:#3bffa0;--radius:10px;
+  --accent:#ff3b3b;--accent2:#ff8c42;--on-accent:#fff;--green:#3bffa0;--red:#ff4d6a;--radius:10px;
   --shadow:0 10px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);
   --word-font:'DM Mono';--word-size:52px;--orp-x:40%;
 }
 body.light-mode{
-  --bg:#f2f0eb;--surface:#fff;--surface2:#f7f5f0;--border:#dddad2;--text:#1a1a22;--muted:#888890;--green:#14a86b;
+  --bg:#f2f0eb;--surface:#fff;--surface2:#f7f5f0;--border:#dddad2;--text:#1a1a22;--muted:#888890;--green:#14a86b;--red:#d6304c;
   --shadow:0 10px 30px rgba(40,30,10,.08),0 2px 6px rgba(40,30,10,.06);
 }
 body[data-accent=mono]{--accent:#e8e8f0;--accent2:#8a8a96;--on-accent:#0d0d0f}
@@ -51,7 +51,8 @@ button:disabled{opacity:.45;cursor:default}
 .btn:hover:not(:disabled){border-color:var(--muted)}
 .btn:active:not(:disabled),.icon-btn:active,.tab:active,.card:active{transform:scale(.96)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.btn.primary:hover:not(:disabled){background:#ff5252;border-color:#ff5252}
+.btn.primary{transition:transform .12s,filter .18s,box-shadow .18s}
+.btn.primary:hover:not(:disabled){border-color:var(--accent);filter:brightness(1.07);box-shadow:0 3px 12px color-mix(in srgb,var(--accent) 20%,transparent)}
 .btn.ghost{background:transparent}
 .btn.ai{background:transparent;border-color:var(--accent2);color:var(--accent2)}
 .btn.sm{height:30px;padding:0 10px;font-size:12px}
@@ -155,11 +156,11 @@ textarea:focus{border-color:var(--muted)}
 
 .status{display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
 .status.show{display:block;animation:slideDown .25s ease}
-.status.err{border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.status.err{border-color:color-mix(in srgb,var(--red) 40%,transparent)}
 .status.ok{border-color:color-mix(in srgb,var(--green) 40%,transparent)}
 .status-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .status-text{font-size:12.5px}
-.status.err .status-text{color:var(--accent)}
+.status.err .status-text{color:var(--red)}
 .status-x{color:var(--muted);font-size:12px;line-height:1.4;padding:0 2px}
 .status-x:hover{color:var(--text)}
 .status-bar{height:3px;border-radius:2px;background:var(--border);margin-top:8px;overflow:hidden;display:none}
@@ -213,8 +214,9 @@ textarea:focus{border-color:var(--muted)}
 .rmenu button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;text-align:left;padding:7px 10px;border-radius:6px;font-size:13px;color:var(--text)}
 .rmenu button:hover:not(:disabled){background:var(--surface)}
 .rmenu button:disabled{opacity:.4;cursor:default}
-.rmenu button.confirm{color:var(--accent2)}
-.rmenu button.danger:hover:not(:disabled){color:var(--accent)}
+.rmenu button.confirm{color:var(--red)}
+.rmenu button.danger{color:var(--red)}
+#clearRecent:hover{color:var(--red);border-color:color-mix(in srgb,var(--red) 50%,var(--border))}
 .rmenu button .ic{width:14px;height:14px;flex:none}
 .rmenu button.ai .ic{color:var(--accent2)}
 .rmenu hr{border:0;border-top:1px solid var(--border);margin:4px 2px}
@@ -252,7 +254,7 @@ body.focus .focus-left{display:flex;gap:8px;position:fixed;top:16px;left:16px;z-
 body.focus .fs-focus{display:inline-flex}
 .warn,.undo-toast{position:fixed;top:22px;left:50%;transform:translate(-50%,-8px);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);opacity:0;pointer-events:none;z-index:300;transition:opacity .2s,transform .2s,top .2s}
 .warn{padding:8px 14px}
-.warn.err{border-color:var(--accent)}
+.warn.err{border-color:color-mix(in srgb,var(--red) 60%,transparent)}
 .undo-toast{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px}
 .undo-toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
 .warn.show{opacity:1;transform:translate(-50%,0)}
