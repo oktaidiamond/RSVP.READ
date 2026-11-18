@@ -2706,7 +2706,7 @@ function pdfClose(){
   if (PV.io) PV.io.disconnect();
   PV.io = null;
   if (PV.doc) PV.doc.destroy();
-  PV.doc = null; PV.key = null; PV.n = 0; PV.keep = null;
+  PV.doc = null; PV.key = null; PV.n = 0; PV.keep = null; PV.pw = null; PV.pwDoc = null; PV.up = null;
   pdfEl.replaceChildren();
 }
 
@@ -2850,6 +2850,61 @@ function pdfPageOf(frac){
 
 function pdfVoiceActive(){ return T.state === 'playing' || T.state === 'paused'; }
 
+const pwNorm = t => t.toLowerCase().match(/[\p{L}\p{N}]{5,}/gu) || [];
+async function pdfWords(){
+  const doc = PV.doc;
+  if (!doc || PV.pwDoc === doc) return;
+  PV.pwDoc = doc; PV.pw = null; PV.up = null;
+  let pages = [], total = 0;
+  try {
+    for (let i = 1; i <= doc.numPages; i++){
+      const tc = await (await doc.getPage(i)).getTextContent();
+      if (PV.pwDoc !== doc) return;
+      const set = new Set(pwNorm(tc.items.map(x => x.str).join(' ')));
+      total += set.size; pages.push(set);
+    }
+  } catch { pages = []; }
+  if (pages.length !== doc.numPages || total < doc.numPages * 8){
+    pages = null;
+    if (S.lines && S.lines.length){
+      const by = Array.from({length:doc.numPages}, () => new Set());
+      S.lines.forEach(l => { if (l.p >= 1 && l.p <= doc.numPages) pwNorm(l.t).forEach(w => by[l.p - 1].add(w)); });
+      if (by.filter(x => x.size).length >= 2) pages = by;
+    }
+  }
+  if (PV.pwDoc !== doc) return;
+  PV.pw = pages; PV.up = null;
+  pdfProgress();
+}
+function pdfUnitPages(){
+  if (!PV.pw || !T.units.length) return null;
+  const key = S.docVersion + ':' + T.units.length + ':' + T.uwTotal;
+  if (PV.up && PV.upKey === key) return PV.up;
+  const pw = PV.pw, n = pw.length, up = new Array(T.units.length);
+  let cur = 0, miss = 0;
+  for (let u = 0; u < T.units.length; u++){
+    const toks = pwNorm(T.units[u].t);
+    const ex = pdfPageOf(T.uwTotal ? T.uw[u] / T.uwTotal : 0);
+    if (toks.length >= 2){
+      let best = -1, bs = 0;
+      const hi = Math.min(n, cur + 10 + miss);
+      for (let p = cur; p < hi; p++){
+        let h = 0;
+        for (const t of toks) if (pw[p].has(t)) h++;
+        const sc = h / toks.length - Math.abs(p + 1 - ex) * 0.03;
+        if (sc > bs + 1e-9){ bs = sc; best = p; }
+      }
+      if (best >= 0 && bs >= (best > cur + 1 ? 0.5 : 0.3)){ cur = best; miss = 0; } else miss++;
+    }
+    up[u] = cur + 1;
+  }
+  PV.up = up; PV.upKey = key;
+  return up;
+}
+function pdfVoicePage(){
+  const up = pdfUnitPages();
+  return up ? up[Math.min(T.u, up.length - 1)] : pdfPageOf(pdfVoiceFrac());
+}
 function pdfVoiceFrac(){ return T.uwTotal ? (T.uw[Math.min(T.u, T.units.length - 1)] || 0) / T.uwTotal : 0; }
 
 function pdfPageAt(y){
@@ -2869,7 +2924,7 @@ function pdfProgress(){
   rEls.fill.style.width = $('#readKnob').style.left = (frac * 100) + '%';
   rEls.pct.textContent = (voice ? ttsEta() + ' · ' : '') + Math.round(frac * 100) + '%';
   rEls.chapter.textContent = `Page ${cur} of ${PV.n}`;
-  const vp = voice ? pdfPageOf(pdfVoiceFrac()) : 0;
+  const vp = voice ? pdfVoicePage() : 0;
   let dir = '';
   if (voice){
     const pgEl = pdfEl.children[vp - 1];
@@ -2921,12 +2976,13 @@ async function setPdfMode(on){
   try { ok = await pdfOpen(); } catch { ok = false; }
   btn.classList.remove('busy');
   if (!ok){ btn.hidden = !S.pdf; return; }
+  pdfWords();
   document.body.classList.add('pdf-mode');
   btn.dataset.v = 'pdf';
   $('#pdfTx').hidden = false;
   $('#rSize').textContent = Math.round(PV.zoom * 100) + '%';
   if (pdfVoiceActive() && PV.keep != null){ pdfEl.scrollTop = PV.keep; pdfProgress(); }
-  else pdfGoto(pdfPageOf(at));
+  else pdfGoto(pdfVoiceActive() ? pdfVoicePage() : pdfPageOf(at));
   pdfEl.focus({preventScroll:true});
   requestAnimationFrame(pdfProgress);
 }
@@ -2937,7 +2993,7 @@ $('#pdfBtn').onclick = e => {
   const pdf = b.dataset.v === 'pdf';
   if (pdf !== inPdf()) setPdfMode(pdf);
 };
-$('#pdfSync').onclick = () => pdfGoto(pdfPageOf(pdfVoiceFrac()), true);
+$('#pdfSync').onclick = () => pdfGoto(pdfVoicePage(), true);
 (() => {
   const d = $('#txDiv');
   let raf = 0;
