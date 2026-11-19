@@ -742,6 +742,7 @@ const $$ = s => [...document.querySelectorAll(s)];
 
 const FONTS = ['DM Mono','JetBrains Mono','Fira Mono','Source Code Pro','Inconsolata','IBM Plex Mono','Space Mono'];
 const RECENT_KEY = 'rsvp-recent';
+const LAST_KEY = 'rsvp-last';
 const RECENT_MAX = 20;
 const CLEAN_BATCH_CHARS = 16000;
 const CLEAN_PARALLEL = 3;
@@ -840,6 +841,7 @@ function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null
   updatePdfUI();
   addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines, pdf:S.pdf ? S.pdf.key : null, thumb:S.pdf ? thumb : null, pos, view:S.pdfView ? 'pdf' : '', keep});
   if (pos > 0) seek(Math.min(words.length - 1, Math.round(pos * words.length)));
+  try { const le = readRecent().find(x => x.text === S.text); if (le) localStorage.setItem(LAST_KEY, le.id); } catch {}
   return true;
 }
 
@@ -4105,6 +4107,15 @@ setSize(52);
 setFont('DM Mono');
 setReadSize(19);
 renderRecent();
+try {
+  const lid = localStorage.getItem(LAST_KEY), le = lid && readRecent().find(x => x.id === lid);
+  if (le){
+    holdRecent = true;
+    try { loadText(le.text, {title:le.title, cleaned:le.cleaned, lines:le.lines || null, pdfKey:le.pdf, thumb:le.thumb, pos:le.pos || 0, view:le.view, keep:true, lu:le.lu, ln:le.ln}); }
+    finally { holdRecent = false; }
+    renderRecent();
+  }
+} catch {}
 </script>
 </body>
 </html>
