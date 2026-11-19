@@ -342,7 +342,10 @@ body.pdf-mode .read-scroll,body.pdf-mode #tocBtn{display:none}
 body.pdf-mode.pdf-split .tx-div{display:block}
 body.pdf-mode.pdf-split .read-scroll{display:block;left:auto;width:var(--txw);border-left:1px solid var(--border)}
 body.pdf-mode.pdf-split .read-scroll{top:56px;bottom:var(--dockh,104px);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 7%,#000 93%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 7%,#000 93%,transparent 100%)}
-.tx-bar{display:none;position:absolute;right:6px;top:56px;bottom:var(--dockh,104px);width:4px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);z-index:4;pointer-events:none}
+.tx-bar{display:none;position:absolute;right:6px;top:56px;bottom:var(--dockh,104px);width:4px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);z-index:4;touch-action:none}
+.tx-bar::after{content:'';position:absolute;top:0;bottom:0;left:-8px;right:-6px}
+.tx-thumb{transition:background .15s}
+.tx-bar:hover .tx-thumb,.tx-bar.drag .tx-thumb{background:var(--muted)}
 body.pdf-mode.pdf-split .tx-bar{display:block}
 .tx-thumb{position:absolute;left:0;right:0;top:0;height:30px;border-radius:2px;background:color-mix(in srgb,var(--muted) 75%,transparent)}
 body.pdf-mode.pdf-split .read-col{padding:8vh 24px 55vh}
@@ -2643,6 +2646,27 @@ function txBarUpdate(){
   t.style.height = th + 'px';
   t.style.transform = `translateY(${max > 0 ? Math.min(1, sc.scrollTop / max) * (h - th) : 0}px)`;
 }
+(() => {
+  const bar = $('#txBar'), thumb = $('#txThumb');
+  let off = 0;
+  const geo = () => { const h = bar.clientHeight, th = thumb.offsetHeight, sc = rEls.scroll; return {top:bar.getBoundingClientRect().top, h, th, max:sc.scrollHeight - sc.clientHeight}; };
+  const move = y => {
+    const g = geo();
+    if (g.h <= g.th || g.max <= 0) return;
+    rEls.scroll.scrollTop = Math.max(0, Math.min(1, (y - g.top - off) / (g.h - g.th))) * g.max;
+  };
+  bar.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const tr = thumb.getBoundingClientRect();
+    off = e.clientY >= tr.top && e.clientY <= tr.bottom ? e.clientY - tr.top : tr.height / 2;
+    bar.setPointerCapture(e.pointerId);
+    bar.classList.add('drag');
+    move(e.clientY);
+  });
+  bar.addEventListener('pointermove', e => { if (bar.classList.contains('drag')) move(e.clientY); });
+  ['pointerup', 'pointercancel'].forEach(ev => bar.addEventListener(ev, () => bar.classList.remove('drag')));
+})();
 function readEta(){
   if (inPdf() || !R.pctText) return;
   rEls.pct.textContent = (pdfVoiceActive() ? ttsEta() + ' · ' : '') + R.pctText;
@@ -3871,7 +3895,7 @@ window.addEventListener('resize', txSync);
 
 function ttsUi(){
   const b = tEls.btn;
-  btnSet(b, T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`);
+  btnSet(b, T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? (T.ended ? `${ic('replay')}Replay` : `${ic('play')}Resume`) : `${TTS_ICON}Listen`);
   b.classList.toggle('on', T.state !== 'idle');
   document.body.classList.toggle('tts-active', T.state !== 'idle');
   pdfProgress();
@@ -3972,7 +3996,14 @@ function ttsMark(si){
 }
 
 function ttsPlay(i){
-  if (i >= T.units.length){ S.lu = S.ln = null; ttsStop(); return; }
+  if (i >= T.units.length){
+    S.lu = S.ln = null;
+    T.ended = true; T.state = 'paused'; T.src = null; T.waiting = -1; T.boost = false;
+    T.u = T.units.length - 1;
+    $('#spBtn').classList.remove('boost');
+    ttsUi();
+    return;
+  }
   T.u = i;
   S.lu = i; S.ln = T.units.length;
   ttsTrim();
@@ -4002,11 +4033,12 @@ function ttsFirstUnit(){
   return 0;
 }
 
-async function ttsStart(){
+async function ttsStart(from){
   if (T.state !== 'idle' || !T.units.length) return;
   if (LKS.state !== 'idle') lkSpeakStop();
   T.u = ttsFirstUnit();
-  if (S.lu != null && S.ln === T.units.length && S.lu < T.units.length && Math.abs((T.uw[S.lu] || 0) - (T.uw[T.u] || 0)) <= 600) T.u = S.lu;
+  if (from != null) T.u = from;
+  else if (S.lu != null && S.ln === T.units.length && S.lu < T.units.length) T.u = S.lu;
   T.state = 'loading';
   T.pct = T.ready && T.worker ? 85 : 0;
   ttsUi();
@@ -4034,6 +4066,7 @@ async function ttsStart(){
 
 function ttsStop(){
   const was = T.state;
+  T.ended = false;
   if (LKS.state === 'loading') lkSpeakStop();
   T.state = 'idle';
   T.boost = false;
@@ -4058,6 +4091,7 @@ function ttsPause(){
 
 function ttsResume(){
   if (T.state !== 'paused') return;
+  if (T.ended){ ttsJump(0, true, false); return; }
   if (LKS.state !== 'idle') lkSpeakStop();
   T.state = 'playing';
   ttsUi();
@@ -4067,6 +4101,7 @@ function ttsResume(){
 
 function ttsToggle(){
   if (ttsBlocked()) return;
+  if (T.ended){ if (LKS.state !== 'idle') lkSpeakStop(); ttsJump(0, true, false); return; }
   if (T.state === 'idle') ttsStart();
   else if (T.state === 'loading') ttsStop();
   else if (T.state === 'playing') ttsPause();
@@ -4082,6 +4117,7 @@ function ttsSpeed(){
 
 function ttsJump(u, resume, clear){
   if (T.state !== 'playing' && T.state !== 'paused') return;
+  T.ended = false;
   T.u = u;
   S.lu = u; S.ln = T.units.length;
   T.epoch++;
@@ -4104,7 +4140,9 @@ function ttsRetune(){
 
 let ttsClick = 0;
 rEls.text.addEventListener('click', e => {
-  if (T.state !== 'playing' && T.state !== 'paused') return;
+  const idle = T.state === 'idle';
+  if (!idle && T.state !== 'playing' && T.state !== 'paused') return;
+  if (idle && (!ttsOk() || !T.units.length)) return;
   const sp = e.target.closest && e.target.closest('.ts');
   clearTimeout(ttsClick);
   if (!sp || e.detail > 1) return;
@@ -4112,7 +4150,9 @@ rEls.text.addEventListener('click', e => {
     if (String(window.getSelection())) return;
     const si = T.sp.indexOf(sp);
     const u = T.units.findIndex(x => x.s >= si);
-    if (u >= 0) ttsJump(u, true, false);
+    if (u < 0) return;
+    if (T.state === 'idle') ttsStart(u);
+    else ttsJump(u, true, false);
   }, 260);
 });
 const TRH = {t:0, down:false, swallow:false};
