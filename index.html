@@ -2777,10 +2777,11 @@ function pdfLayout(){
   PV.zt = setTimeout(() => [...pdfEl.children].forEach(d => { d._tok = (d._tok || 0) + 1; d._done = false; PV.io.unobserve(d); PV.io.observe(d); }), 180);
 }
 
+const PDF_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 function pdfStep(d){
-  const k = Math.log(PV.zoom) / Math.log(1.15);
-  const n = d > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1;
-  pdfZoom(Math.pow(1.15, n));
+  const z = PV.zoom;
+  const n = d > 0 ? PDF_STEPS.find(v => v > z + 1e-3) : [...PDF_STEPS].reverse().find(v => v < z - 1e-3);
+  if (n) pdfZoom(n);
 }
 function pdfZoom(z, ax, ay){
   z = Math.max(0.5, Math.min(3, z));
