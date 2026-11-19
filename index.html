@@ -3206,7 +3206,8 @@ function pdfTxApply(){
 $('#pdfTx').onclick = pdfTxToggle;
 const ttsSkip = d => {
   if (!pdfVoiceActive() || !T.units.length) return;
-  ttsJump(Math.max(0, Math.min(T.units.length - 1, T.u + d)), false, false);
+  const restart = d < 0 && T.src && T.src.currentTime > 2;
+  ttsJump(restart ? T.u : Math.max(0, Math.min(T.units.length - 1, T.u + d)), false, false);
 };
 $('#ttsBack').onclick = () => ttsSkip(-1);
 $('#ttsFwd').onclick = () => ttsSkip(1);
