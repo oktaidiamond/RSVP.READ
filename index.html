@@ -383,6 +383,12 @@ body.tts-active .tts-skip{display:inline-flex}
 .pdf-tl br::selection{background:transparent}
 .pdf-tl ::selection{background:color-mix(in srgb,var(--accent) 35%,transparent);color:transparent}
 body.pdf-mode .pdf-page canvas{display:block;width:100%;height:100%}
+body.pdf-inv .pdf-page{background:#0d0d10}
+body.pdf-inv .pdf-page canvas{filter:invert(1) hue-rotate(180deg)}
+body.pdf-inv .recent-thumb{filter:invert(1) hue-rotate(180deg);background:#0d0d10}
+#rAaPop .pdfrow{display:none}
+body.pdf-mode #rAaPop .pdfrow{display:block}
+body.pdf-mode #rAaPop .tp-seg.pdfrow{display:grid}
 .recent-thumb{width:34px;height:46px;object-fit:cover;object-position:top;border-radius:4px;border:1px solid var(--border);background:#fff;flex:none}
 .ts.on{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .ts{cursor:pointer;transition:background .12s;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
@@ -728,6 +734,8 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
           <button class="dd-btn"><span class="dd-label">DM Mono</span><span class="caret"><svg class="ic"><use href="#ic-caret"/></svg></span></button>
           <div class="dd-list"></div>
         </div>
+  <div class="tp-label tp-gap pdfrow">Page colors</div>
+  <div class="tp-seg pdfrow" id="pdfInvSeg"><button data-i="0">Original</button><button data-i="1">Inverted</button></div>
 </div>
 <div class="theme-pop dock-pop" id="spPop" hidden>
   <div class="tp-label tp-row"><span>Speed</span><span id="spNum">1x</span></div>
@@ -1190,6 +1198,16 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && POPS().some(p => !p.hidden)){ e.stopImmediatePropagation(); themeClose(); }
 }, true);
 $('#rAaBtn').onclick = () => popOpen($('#rAaBtn'), $('#rAaPop'));
+const PDFINV_KEY = 'rsvp-pdfinv';
+function pdfInvSet(on, save){
+  document.body.classList.toggle('pdf-inv', on);
+  $$('#pdfInvSeg button').forEach(b => b.classList.toggle('sel', (b.dataset.i === '1') === on));
+  if (save){ try { localStorage.setItem(PDFINV_KEY, on ? '1' : '0'); } catch {} }
+}
+$$('#pdfInvSeg button').forEach(b => { b.onclick = () => pdfInvSet(b.dataset.i === '1', true); });
+let pdfInvInit = false;
+try { pdfInvInit = localStorage.getItem(PDFINV_KEY) === '1'; } catch {}
+pdfInvSet(pdfInvInit, false);
 $('#fAaBtn').onclick = () => popOpen($('#fAaBtn'), $('#fAaPop'));
 const SPH = {t:0, swallow:false};
 function spBoost(on){
@@ -3169,7 +3187,7 @@ async function setPdfMode(on){
   if (!ok){ btn.hidden = !S.pdf; return; }
   pdfWords();
   document.body.classList.add('pdf-mode');
-  $('#rAaBtn').title = 'Zoom';
+  $('#rAaBtn').title = 'Zoom and page colors';
   btn.dataset.v = 'pdf';
   $('#pdfTx').hidden = false;
   $('#rSize').textContent = Math.round(PV.zoom * 100) + '%';
