@@ -385,7 +385,7 @@ body.tts-active .tts-skip{display:inline-flex}
 body.pdf-mode .pdf-page canvas{display:block;width:100%;height:100%}
 body.pdf-inv .pdf-page{background:#0d0d10}
 body.pdf-inv .pdf-page canvas{filter:invert(1) hue-rotate(180deg)}
-body.pdf-inv .recent-thumb{filter:invert(1) hue-rotate(180deg);background:#0d0d10}
+.recent-thumb.inv{filter:invert(1) hue-rotate(180deg);background:#0d0d10}
 #rAaPop .pdfrow{display:none}
 body.pdf-mode #rAaPop .pdfrow{display:block}
 body.pdf-mode #rAaPop .tp-seg.pdfrow{display:grid}
@@ -856,7 +856,15 @@ function loadText(text, {title, cleaned=false, lines=null, pdf=null, pdfKey=null
   } else pdfKey = S.pdf.key;
   S.pdfView = view === 'pdf' && !!S.pdf;
   updatePdfUI();
+  const prevInv = (readRecent().find(x => x.text === S.text) || {}).inv;
   addRecent({title:S.title, text:S.text, words:words.length, cleaned, lines:S.lines, pdf:S.pdf ? S.pdf.key : null, thumb:S.pdf ? thumb : null, pos, view:S.pdfView ? 'pdf' : '', keep});
+  if (S.pdf){
+    const all = readRecent(), pe = all.find(x => x.text === S.text);
+    if (pe){
+      if (pe.inv == null){ pe.inv = prevInv != null ? prevInv : 0; writeRecent(all); }
+      pdfInvSet(pe.inv === 1);
+    }
+  }
   if (pos > 0) seek(Math.min(words.length - 1, Math.round(pos * words.length)));
   try { const le = readRecent().find(x => x.text === S.text); if (le) localStorage.setItem(LAST_KEY, le.id); } catch {}
   return true;
@@ -1198,16 +1206,21 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && POPS().some(p => !p.hidden)){ e.stopImmediatePropagation(); themeClose(); }
 }, true);
 $('#rAaBtn').onclick = () => popOpen($('#rAaBtn'), $('#rAaPop'));
-const PDFINV_KEY = 'rsvp-pdfinv';
-function pdfInvSet(on, save){
+function pdfInvSet(on){
   document.body.classList.toggle('pdf-inv', on);
   $$('#pdfInvSeg button').forEach(b => b.classList.toggle('sel', (b.dataset.i === '1') === on));
-  if (save){ try { localStorage.setItem(PDFINV_KEY, on ? '1' : '0'); } catch {} }
 }
-$$('#pdfInvSeg button').forEach(b => { b.onclick = () => pdfInvSet(b.dataset.i === '1', true); });
-let pdfInvInit = false;
-try { pdfInvInit = localStorage.getItem(PDFINV_KEY) === '1'; } catch {}
-pdfInvSet(pdfInvInit, false);
+$$('#pdfInvSeg button').forEach(b => { b.onclick = () => {
+  const on = b.dataset.i === '1';
+  pdfInvSet(on);
+  if (!S.pdf) return;
+  const all = readRecent(), e = all.find(x => x.text === S.text);
+  if (!e) return;
+  e.inv = on ? 1 : 0;
+  writeRecent(all);
+  if ($('[data-panel="recent"]').classList.contains('active')) renderRecent();
+}; });
+pdfInvSet(false);
 $('#fAaBtn').onclick = () => popOpen($('#fAaBtn'), $('#fAaPop'));
 const SPH = {t:0, swallow:false};
 function spBoost(on){
@@ -2348,7 +2361,7 @@ function renderRecent(){
   list.forEach(e => {
     const row = document.createElement('div');
     row.className = 'recent-item' + (S.text && e.text === S.text ? ' current' : '');
-    row.innerHTML = `${e.thumb ? `<img class="recent-thumb" alt="" src="${e.thumb}">` : ''}<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span class="sep">·</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div><button class="recent-more" title="More">${DOTS}</button>`;
+    row.innerHTML = `${e.thumb ? `<img class="recent-thumb${e.inv ? ' inv' : ''}" alt="" src="${e.thumb}">` : ''}<div class="recent-main"><h4>${esc(e.title)}</h4><div class="meta"><span class="mono">${fmtNum(e.words)} words</span><span class="sep">·</span><span>${ago(e.ts)}</span>${e.cleaned ? '<span class="badge">AI cleaned</span>' : ''}</div></div><button class="recent-more" title="More">${DOTS}</button>`;
     row.onclick = () => {
       holdRecent = true;
       try { loadText(e.text, {title:e.title, cleaned:e.cleaned, lines:e.lines || null, pdfKey:e.pdf, thumb:e.thumb, pos:e.pos || 0, view:e.view, keep:true, lu:e.lu, ln:e.ln}); }
