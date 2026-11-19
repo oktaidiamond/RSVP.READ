@@ -3915,8 +3915,8 @@ function ttsWorker(){
     T.worker = w;
     w.onmessage = e => {
       const m = e.data;
-      if (m.type === 'progress'){ T.pct = Math.min(80, Math.floor(m.loaded / m.total * 80)); if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
-      else if (m.type === 'prep'){ T.pct = 85; if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
+      if (m.type === 'progress'){ T.pct = Math.min(40, Math.floor(m.loaded / m.total * 40)); if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
+      else if (m.type === 'prep'){ T.pct = 40; if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
       else if (m.type === 'ready')res();
       else if (m.type === 'error'){ T.ready = null; T.worker = null; w.terminate(); rej(new Error('load')); }
       else if (m.type === 'audio'){ if (typeof m.id === 'string') lkGot(m); else ttsGot(m); }
@@ -4010,7 +4010,7 @@ function ttsPlay(i){
   pdfProgress();
   readEta();
   ttsMark(T.units[i].s);
-  ttsWant(i); ttsWant(i + 1); ttsWant(i + 2); ttsWant(i - 1); ttsWant(i - 2);
+  ttsWant(i); ttsWant(i + 1); ttsWant(i + 2);
   const url = T.cache.get(i);
   if (!url){ T.waiting = i; return; }
   T.waiting = -1;
@@ -4040,18 +4040,33 @@ async function ttsStart(from){
   if (from != null) T.u = from;
   else if (S.lu != null && S.ln === T.units.length && S.lu < T.units.length) T.u = S.lu;
   T.state = 'loading';
-  T.pct = T.ready && T.worker ? 85 : 0;
+  T.pct = T.ready && T.worker ? 55 : 0;
   ttsUi();
-  try { await ttsWorker(); } catch { ttsStop(); return; }
+  let pf = T.pct;
+  const creep = setInterval(() => {
+    if (T.state !== 'loading' || T.pct < 40 || T.pct >= 54) return;
+    pf = Math.max(pf, T.pct) + (54.5 - Math.max(pf, T.pct)) * 0.03;
+    const n = Math.floor(pf);
+    if (n !== T.pct){ T.pct = n; ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
+  }, 200);
+  try { await ttsWorker(); } catch { clearInterval(creep); ttsStop(); return; }
+  clearInterval(creep);
   if (T.state !== 'loading') return;
-  T.pct = Math.max(T.pct, 85);
+  T.pct = Math.max(T.pct, 55);
   ttsUi();
-  const need = [];
-  for (let k = 0; k < 3 && T.u + k < T.units.length; k++) need.push(T.u + k);
+  const need = [T.u];
+  if (T.u + 1 < T.units.length) need.push(T.u + 1);
+  if (T.u > 0) need.push(T.u - 1);
+  const slot = 45 / need.length;
+  pf = T.pct;
   const t0 = performance.now();
   while (T.state === 'loading' && need.some(i => !T.cache.has(i)) && performance.now() - t0 < 25000){
     need.forEach(ttsWant);
-    const np = 85 + Math.floor(15 * need.filter(i => T.cache.has(i)).length / need.length);
+    const base = 55 + slot * need.filter(i => T.cache.has(i)).length;
+    pf = Math.max(pf, base);
+    const cap = base + slot * 0.9;
+    if (pf < cap) pf += (cap - pf) * 0.05;
+    const np = Math.min(99, Math.floor(pf));
     if (np !== T.pct){ T.pct = np; ttsUi(); }
     await new Promise(r => setTimeout(r, 60));
   }
