@@ -3212,7 +3212,7 @@ const ttsSkip = d => {
   const cur = T.units[T.u].s;
   let t = -1;
   if (d > 0) t = T.units.findIndex(x => x.s > cur);
-  else if (T.units.findIndex(x => x.s === cur) < T.u || (T.src && T.src.currentTime > 2)) t = T.units.findIndex(x => x.s === cur);
+  else if (T.units.findIndex(x => x.s === cur) < T.u || (T.src && T.src.currentTime > 3 * T.src.playbackRate)) t = T.units.findIndex(x => x.s === cur);
   else { const ps = T.units.reduce((m, x) => x.s < cur ? x.s : m, -1); t = ps < 0 ? 0 : T.units.findIndex(x => x.s === ps); }
   if (t >= 0) ttsJump(t, false, false);
 };
@@ -3972,7 +3972,7 @@ function ttsPlay(i){
   pdfProgress();
   readEta();
   ttsMark(T.units[i].s);
-  ttsWant(i); ttsWant(i + 1); ttsWant(i + 2);
+  ttsWant(i); ttsWant(i + 1); ttsWant(i + 2); ttsWant(i - 1); ttsWant(i - 2);
   const url = T.cache.get(i);
   if (!url){ T.waiting = i; return; }
   T.waiting = -1;
