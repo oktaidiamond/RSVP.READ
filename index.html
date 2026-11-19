@@ -3767,7 +3767,7 @@ function splitSentences(t){
   return out;
 }
 
-function chunkText(t, max = 240){
+function chunkText(t, max = 400){
   const out = [];
   while (t.length > max){
     let k = Math.max(t.lastIndexOf(', ', max), t.lastIndexOf('; ', max), t.lastIndexOf(': ', max));
