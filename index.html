@@ -3209,8 +3209,12 @@ function pdfTxApply(){
 $('#pdfTx').onclick = pdfTxToggle;
 const ttsSkip = d => {
   if (!pdfVoiceActive() || !T.units.length) return;
-  const restart = d < 0 && T.src && T.src.currentTime > 2;
-  ttsJump(restart ? T.u : Math.max(0, Math.min(T.units.length - 1, T.u + d)), false, false);
+  const cur = T.units[T.u].s;
+  let t = -1;
+  if (d > 0) t = T.units.findIndex(x => x.s > cur);
+  else if (T.units.findIndex(x => x.s === cur) < T.u || (T.src && T.src.currentTime > 2)) t = T.units.findIndex(x => x.s === cur);
+  else { const ps = T.units.reduce((m, x) => x.s < cur ? x.s : m, -1); t = ps < 0 ? 0 : T.units.findIndex(x => x.s === ps); }
+  if (t >= 0) ttsJump(t, false, false);
 };
 $('#ttsBack').onclick = () => ttsSkip(-1);
 $('#ttsFwd').onclick = () => ttsSkip(1);
