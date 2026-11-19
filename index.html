@@ -673,9 +673,9 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
         <button class="btn sm" id="pdfTx" title="Transcript" hidden><svg class="ic"><use href="#ic-transcript"/></svg><span class="lbl"> Transcript</span></button>
         <button class="btn sm" id="tocBtn" title="Contents"><svg class="ic"><use href="#ic-text"/></svg><span class="lbl"> Contents</span></button>
         <button class="btn sm" id="rAaBtn" title="Text size and font">Aa</button>
-        <button class="btn sm tts-skip" id="ttsBack" title="Back"><svg class="ic"><use href="#ic-sb"/></svg></button>
+        <button class="btn sm tts-skip" id="ttsBack" title="Previous sentence"><svg class="ic"><use href="#ic-sb"/></svg></button>
         <button class="btn sm primary tts-ui" id="ttsBtn"></button>
-        <button class="btn sm tts-skip" id="ttsFwd" title="Forward"><svg class="ic"><use href="#ic-sf"/></svg></button>
+        <button class="btn sm tts-skip" id="ttsFwd" title="Next sentence"><svg class="ic"><use href="#ic-sf"/></svg></button>
         <button class="btn sm bv-btn tts-ui tts-on" id="spBtn" title="Speed"><svg class="ic"><use href="#ic-gauge"/></svg><span class="bv" id="spVal">1x</span></button>
         <button class="btn sm bv-btn tts-ui tts-on" id="volBtn" title="Volume and voice"><svg class="ic"><use href="#ic-speaker"/></svg><span class="bv" id="volVal">100%</span></button>
         <button class="icon-btn theme-toggle" title="Theme">
@@ -3119,6 +3119,7 @@ async function setPdfMode(on){
     const was = inPdf();
     if (was) PV.keep = pdfEl.scrollTop;
     document.body.classList.remove('pdf-mode');
+    $('#rAaBtn').title = 'Text size and font';
     btn.dataset.v = 'text';
     $('#pdfSyncWrap').hidden = true;
     $('#pdfTx').hidden = true;
@@ -3136,6 +3137,7 @@ async function setPdfMode(on){
   if (!ok){ btn.hidden = !S.pdf; return; }
   pdfWords();
   document.body.classList.add('pdf-mode');
+  $('#rAaBtn').title = 'Zoom';
   btn.dataset.v = 'pdf';
   $('#pdfTx').hidden = false;
   $('#rSize').textContent = Math.round(PV.zoom * 100) + '%';
