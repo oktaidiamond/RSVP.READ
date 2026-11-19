@@ -2777,7 +2777,7 @@ function pdfLayout(){
   PV.zt = setTimeout(() => [...pdfEl.children].forEach(d => { d._tok = (d._tok || 0) + 1; d._done = false; PV.io.unobserve(d); PV.io.observe(d); }), 180);
 }
 
-const PDF_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+const PDF_STEPS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 function pdfStep(d){
   const z = PV.zoom;
   const n = d > 0 ? PDF_STEPS.find(v => v > z + 1e-3) : [...PDF_STEPS].reverse().find(v => v < z - 1e-3);
