@@ -47,6 +47,7 @@ html,body{background:var(--bg);color:var(--text);overscroll-behavior:none}
 body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
 button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:none;background:none}
 button:disabled{opacity:.45;cursor:default}
+.bl{display:inline-flex;align-items:center;justify-content:center;gap:inherit;transition:opacity .1s ease}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 14px;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border);font-weight:500;transition:transform .12s,background .15s,border-color .15s,color .15s}
 .btn:hover:not(:disabled){border-color:var(--muted)}
 .btn:active:not(:disabled),.icon-btn:active,.tab:active,.card:active{transform:scale(.96)}
@@ -328,6 +329,8 @@ body.ui-hidden .transport,body.ui-hidden .focus-controls,body.ui-hidden .focus-s
 body.ui-hidden{--dockh:0px}
 body.ui-hidden:not(.pdf-split) .read-scroll{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 12%,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 12%,#000 88%,transparent 100%)}
 body.focus .reader-inner{transition:transform .3s ease}
+.bv-btn.boost,.bv-btn.boost:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.bv-btn.boost .bv{color:var(--accent);border-color:var(--accent)}
 .read-top{position:absolute;top:16px;right:16px;z-index:6;display:flex;gap:8px;align-items:center}
 .read-dock::before{content:'';position:absolute;inset:-28px 0 0;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 6%,transparent) 20%,color-mix(in srgb,var(--bg) 22%,transparent) 45%,color-mix(in srgb,var(--bg) 50%,transparent) 70%,color-mix(in srgb,var(--bg) 72%,transparent));opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
 .pdf-view{position:absolute;inset:0 0 var(--dockh,104px);overflow:auto;display:none;outline:none;padding:64px 16px 24px;scrollbar-width:none;overscroll-behavior:contain}
@@ -359,7 +362,7 @@ body.pdf-mode.pdf-split .tx-bar{animation:txFade .25s ease}
 body.pdf-mode.pdf-split.tx-out .read-scroll{animation:txOut .18s ease forwards}
 body.pdf-mode.pdf-split.tx-out .tx-bar{animation:txFadeOut .18s ease forwards}
 .tts-skip{display:none;width:34px;padding:0}
-body.pdf-mode.tts-active .tts-skip{display:inline-flex}
+body.tts-active .tts-skip{display:inline-flex}
 @media (max-width:900px){
   body.pdf-mode.pdf-split .read-scroll{animation-name:txInV}
   body.pdf-mode.pdf-split.tx-out .read-scroll{animation-name:txOutV}
@@ -475,6 +478,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
   .transport .btn{min-width:0;padding:0 10px;white-space:nowrap}
   .transport .play{width:100px}
 }
+@media (max-width:440px){#pdfTx .lbl,#tocBtn .lbl{display:none}#pdfTx,#tocBtn{width:34px;padding:0}}
 @media (max-width:600px){
   .read-controls{margin-left:-14px;margin-right:-14px}
 }
@@ -522,6 +526,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
 <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
 <symbol id="ic-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="ic-transcript" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h6M7 14h10"/></symbol>
 <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
 <symbol id="ic-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
 <symbol id="ic-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
@@ -671,7 +676,8 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
       <div class="read-meta"><span id="readChapter"></span><span id="readPct">0%</span></div>
       <div class="seek" id="readSeek"><div class="read-bar"><i id="readFill"></i></div><span class="knob" id="readKnob"></span></div>
       <div class="read-controls">
-        <button class="btn sm" id="tocBtn"><svg class="ic"><use href="#ic-text"/></svg> Contents</button>
+        <button class="btn sm" id="pdfTx" title="Transcript" hidden><svg class="ic"><use href="#ic-transcript"/></svg><span class="lbl"> Transcript</span></button>
+        <button class="btn sm" id="tocBtn" title="Contents"><svg class="ic"><use href="#ic-text"/></svg><span class="lbl"> Contents</span></button>
         <button class="btn sm" id="rAaBtn" title="Text size and font">Aa</button>
         <button class="btn sm tts-skip" id="ttsBack" title="Back"><svg class="ic"><use href="#ic-sb"/></svg></button>
         <button class="btn sm primary tts-ui" id="ttsBtn"></button>
@@ -691,7 +697,6 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
   <div class="pdf-sync" id="pdfSyncWrap" hidden><button class="btn sm" id="pdfSync"><svg class="ic"><use href="#ic-caret"/></svg>Jump to voice</button></div>
   <div class="read-left"><button class="btn sm" id="exitRead"><svg class="ic"><use href="#ic-x"/></svg> Exit</button><button class="btn sm read-fs" id="fsBtn" title="Fullscreen"><svg class="ic"><use href="#ic-focus"/></svg></button></div>
   <div class="read-top">
-    <button class="btn sm" id="pdfTx" hidden>Transcript</button>
     <div class="seg" id="pdfBtn" data-v="text" hidden><i class="seg-pill"></i><button data-v="pdf">PDF</button><button data-v="text">Text</button></div>
   </div>
   <div class="hint hint-read" id="hintRead"></div>
@@ -1019,8 +1024,8 @@ function seek(i){
 
 function updatePlayUI(){
   const k = S.playing ? 'pause' : S.done ? 'replay' : 'play';
-  els.playFull.innerHTML = `${ic(k)} ${S.playing ? 'Pause' : S.done ? 'Replay' : 'Play'}`;
-  els.playIco.innerHTML = ic(k);
+  btnSet(els.playFull, `${ic(k)} ${S.playing ? 'Pause' : S.done ? 'Replay' : 'Play'}`, k);
+  btnSet(els.playIco, ic(k), k);
 }
 
 function setWpm(v){
@@ -1184,7 +1189,41 @@ document.addEventListener('keydown', e => {
 }, true);
 $('#rAaBtn').onclick = () => popOpen($('#rAaBtn'), $('#rAaPop'));
 $('#fAaBtn').onclick = () => popOpen($('#fAaBtn'), $('#fAaPop'));
-$('#spBtn').onclick = () => popOpen($('#spBtn'), $('#spPop'), spSync);
+const SPH = {t:0, swallow:false};
+function spBoost(on){
+  T.boost = on;
+  $('#spBtn').classList.toggle('boost', on);
+  ttsSpeed();
+}
+function spHold(on){
+  clearTimeout(SPH.t);
+  if (!on){ if (T.boost){ spBoost(false); setTimeout(() => { SPH.swallow = false; }, 60); } return; }
+  SPH.t = setTimeout(() => {
+    if (T.state === 'idle' || T.state === 'loading') return;
+    SPH.swallow = true; spBoost(true);
+  }, 250);
+}
+const SPK = {t:0, down:false, boosted:false};
+function spaceDown(){
+  if (T.state !== 'playing'){ ttsToggle(); return; }
+  SPK.down = true; SPK.boosted = false;
+  clearTimeout(SPK.t);
+  SPK.t = setTimeout(() => { if (SPK.down && T.state === 'playing'){ SPK.boosted = true; spBoost(true); } }, 250);
+}
+function spaceUp(cancel){
+  if (!SPK.down) return;
+  clearTimeout(SPK.t);
+  SPK.down = false;
+  if (SPK.boosted){ SPK.boosted = false; spBoost(false); }
+  else if (!cancel) ttsToggle();
+}
+document.addEventListener('keyup', e => { if (e.key === ' ') spaceUp(false); });
+window.addEventListener('blur', () => spaceUp(true));
+$('#spBtn').addEventListener('pointerdown', e => { if (e.button === 0) spHold(true); });
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => spHold(false), true));
+window.addEventListener('blur', () => spHold(false));
+$('#spBtn').addEventListener('contextmenu', e => e.preventDefault());
+$('#spBtn').onclick = () => { if (SPH.swallow){ SPH.swallow = false; return; } popOpen($('#spBtn'), $('#spPop'), spSync); };
 $('#volBtn').onclick = () => popOpen($('#volBtn'), $('#volPop'), volSync);
 
 function enterFocus(){
@@ -1311,12 +1350,29 @@ function copyText(text, btn){
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
   else fallback();
 }
+function btnSet(b, html, key){
+  b._html = html;
+  const cur = b.firstElementChild && b.firstElementChild.classList.contains('bl') ? b.firstElementChild : null;
+  const put = () => { b.innerHTML = `<span class="bl">${b._html}</span>`; };
+  if (!cur || reduceMotion()){ clearTimeout(b._sw); put(); b._k = key; return; }
+  if (b._k === key){ if (!b._sw && cur.innerHTML !== html) cur.innerHTML = html; return; }
+  b._k = key;
+  clearTimeout(b._sw);
+  cur.style.opacity = '0';
+  b._sw = setTimeout(() => {
+    b._sw = 0;
+    put();
+    const n = b.firstElementChild;
+    n.style.opacity = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => { n.style.opacity = ''; }));
+  }, 90);
+}
 function flash(btn, t = 'Copied'){
   const icon = btn.classList.contains('icon-only');
   if (btn.dataset.label === undefined) btn.dataset.label = icon ? btn.innerHTML : btn.textContent;
-  if (icon) btn.innerHTML = '<svg class="ic"><use href="#ic-check"/></svg>'; else btn.textContent = t;
+  btnSet(btn, icon ? '<svg class="ic"><use href="#ic-check"/></svg>' : esc(t), 'flash');
   clearTimeout(btn._t);
-  btn._t = setTimeout(() => { if (icon) btn.innerHTML = btn.dataset.label; else btn.textContent = btn.dataset.label; }, 1200);
+  btn._t = setTimeout(() => btnSet(btn, icon ? btn.dataset.label : esc(btn.dataset.label), 'rest'), 1200);
 }
 
 let tipTimer, tipTarget = null;
@@ -3277,10 +3333,12 @@ function readingKey(e){
   switch (e.key){
     case 'ArrowDown': e.preventDefault(); sc.scrollBy({top:80, behavior}); break;
     case 'ArrowUp': e.preventDefault(); sc.scrollBy({top:-80, behavior}); break;
+    case 'ArrowLeft': if (pdfVoiceActive()){ e.preventDefault(); ttsSkip(-1); } break;
+    case 'ArrowRight': if (pdfVoiceActive()){ e.preventDefault(); ttsSkip(1); } break;
     case ' ':
       e.preventDefault();
       if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
-      ttsToggle();
+      if (!e.repeat) spaceDown();
       break;
     case 't': case 'T': if (inPdf()) pdfTxToggle(); else toggleToc(); break;
     case '+': case '=': inPdf() ? pdfStep(1) : setReadSize(S.rsize + 2); break;
@@ -3643,6 +3701,7 @@ const ttsBlocked = () => { if (ttsOk()) return false; warn("Listen isn't availab
 const ttsOk = () => !(window.claude && typeof window.claude.use === 'function') && !/claudeusercontent\.com$/i.test(location.hostname) && !!(window.Worker && window.Audio);
 
 const TTS_VOICES = [['af_bella','Bella','US · Female'],['af_heart','Heart','US · Female'],['af_nicole','Nicole','US · Female'],['am_michael','Michael','US · Male'],['am_puck','Puck','US · Male'],['bf_emma','Emma','UK · Female'],['bm_fable','Fable','UK · Male']];
+const ttsRate = () => T.boost ? Math.min(3, T.speed + 1) : T.speed;
 const TTS_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3];
 const TTS_URLS = ['https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm', 'https://esm.sh/kokoro-js@1.2.1'];
 const TTS_WORKER = `
@@ -3816,7 +3875,7 @@ window.addEventListener('resize', txSync);
 
 function ttsUi(){
   const b = tEls.btn;
-  b.innerHTML = T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`;
+  btnSet(b, T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`, T.state);
   b.classList.toggle('on', T.state !== 'idle');
   document.body.classList.toggle('tts-active', T.state !== 'idle');
   pdfProgress();
@@ -3871,7 +3930,7 @@ function ttsEta(){
   const p = T.pace[T.voice];
   const spw = p && p.w >= 20 ? p.sec / p.w : 0.38;
   const left = Math.max(0, T.uwTotal - (T.uw[Math.min(T.u, T.units.length - 1)] || 0));
-  const min = Math.round(left * spw / T.speed / 60);
+  const min = Math.round(left * spw / ttsRate() / 60);
   if (min < 1) return '<1 min left';
   return min < 60 ? `~${min} min left` : `~${Math.floor(min / 60)} h ${min % 60} min left`;
 }
@@ -3930,7 +3989,7 @@ function ttsPlay(i){
   T.waiting = -1;
   const a = new Audio(url);
   a.preservesPitch = true;
-  a.playbackRate = T.speed;
+  a.playbackRate = ttsRate();
   applyVol(a);
   a.onended = () => { if (T.src !== a) return; T.src = null; ttsPlay(i + 1); };
   T.src = a;
@@ -3981,6 +4040,8 @@ function ttsStop(){
   const was = T.state;
   if (LKS.state === 'loading') lkSpeakStop();
   T.state = 'idle';
+  T.boost = false;
+  $('#spBtn').classList.remove('boost');
   T.epoch++;
   if (T.worker) T.worker.postMessage({type:'epoch', epoch:T.epoch});
   if (T.src){ T.src.onended = null; T.src.pause(); T.src = null; }
@@ -4019,7 +4080,8 @@ function ttsToggle(){
 function ttsSpeed(){
   ttsUi();
   pdfProgress();
-  if (T.src) T.src.playbackRate = T.speed;
+  if (T.src) T.src.playbackRate = ttsRate();
+  spSync();
 }
 
 function ttsJump(u, resume, clear){
@@ -4090,7 +4152,8 @@ function ttsDropdown(dd, items, get, set){
 }
 const spFmt = v => v + 'x';
 function spSync(){
-  $('#spVal').textContent = $('#spNum').textContent = spFmt(T.speed);
+  $('#spVal').textContent = spFmt(ttsRate());
+  $('#spNum').textContent = spFmt(T.speed);
   $('#spRange').value = T.speed;
 }
 $('#spRange').oninput = e => { T.speed = +e.target.value; ttsSpeed(); spSync(); };
