@@ -120,6 +120,7 @@ body[data-accent=mono] .dd-item:not(.sel):not(:hover){color:var(--accent2)}
 .wpm-big{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:var(--accent)}
 .wpm-big small{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-left:4px;letter-spacing:.1em}
 #wpmRange{margin-bottom:2px}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--surface2);outline:none;margin:6px 0 14px;accent-color:var(--accent)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
 input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer}
@@ -1266,6 +1267,7 @@ document.addEventListener('keydown', e => {
   }
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z') && UNDO.stack.length){ e.preventDefault(); undoRestore(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (t.tagName === 'BUTTON' && !/^(Tab|Enter|Shift)$/.test(e.key)) t.blur();
   hideTip();
   if (S.reading){ readingKey(e); return; }
   switch (e.key){
@@ -2955,7 +2957,7 @@ function pdfPageEl(p){ return pdfEl.children[Math.max(0, Math.min(PV.n - 1, p - 
 
 function pdfGoto(p, smooth){
   const el = pdfPageEl(p);
-  if (el) pdfEl.scrollTo({top:el.offsetTop - 56, behavior:smooth && !reduceMotion() ? 'smooth' : 'auto'});
+  if (el) pdfEl.scrollTo({top:el.offsetTop - 14, behavior:smooth && !reduceMotion() ? 'smooth' : 'auto'});
 }
 
 function pdfPageOf(frac){
@@ -3644,10 +3646,10 @@ const files = {};
 self.onmessage = e => {
   const m = e.data;
   if (m.type === 'epoch'){ latest = m.epoch; return; }
-  if (m.type === 'load'){ load(m.gpu); return; }
+  if (m.type === 'load'){ load(m.gpu, m.voice); return; }
   if (m.type === 'gen'){ latest = Math.max(latest, m.epoch); queue = queue.then(() => gen(m)); }
 };
-async function load(gpu){
+async function load(gpu, voice){
   try {
     let mod = null;
     for (const u of URLS){ try { mod = await import(u); break; } catch (err) {} }
@@ -3658,6 +3660,8 @@ async function load(gpu){
       try { tts = await open(device, dtype); DEV = device; break; } catch (err) { tts = null; }
     }
     if (!tts) throw new Error('model');
+    postMessage({type:'prep'});
+    try { await speak('Warming up the voice. This sentence is only here to get everything ready.', voice, 1); await speak('Ready.', voice, 1); } catch (err) {}
     postMessage({type:'ready'});
   } catch (err) { postMessage({type:'error'}); }
 }
@@ -3674,16 +3678,18 @@ function open(device, dtype){
     }
   });
 }
+async function speak(text, voice, speed){
+  try { return await tts.generate(text, {voice, speed}); }
+  catch (err) {
+    if (DEV !== 'webgpu') throw err;
+    tts = await open('wasm', 'q8'); DEV = 'wasm';
+    return await tts.generate(text, {voice, speed});
+  }
+}
 async function gen(m){
   if (m.epoch < latest) return;
   try {
-    let a;
-    try { a = await tts.generate(m.text, {voice:m.voice, speed:m.speed}); }
-    catch (err) {
-      if (DEV !== 'webgpu') throw err;
-      tts = await open('wasm', 'q8'); DEV = 'wasm';
-      a = await tts.generate(m.text, {voice:m.voice, speed:m.speed});
-    }
+    const a = await speak(m.text, m.voice, m.speed);
     const s = a.audio;
     postMessage({type:'audio', id:m.id, epoch:m.epoch, voice:m.voice, samples:s, rate:a.sampling_rate}, [s.buffer]);
   } catch (err) { postMessage({type:'fail', id:m.id, epoch:m.epoch}); }
@@ -3824,14 +3830,15 @@ function ttsWorker(){
     T.worker = w;
     w.onmessage = e => {
       const m = e.data;
-      if (m.type === 'progress'){ T.pct = Math.min(99, Math.floor(m.loaded / m.total * 100)); if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
-      else if (m.type === 'ready') res();
+      if (m.type === 'progress'){ T.pct = Math.min(80, Math.floor(m.loaded / m.total * 80)); if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
+      else if (m.type === 'prep'){ T.pct = 85; if (T.state === 'loading') ttsUi(); if (LKS.state === 'loading') lkSpeakUi(); }
+      else if (m.type === 'ready')res();
       else if (m.type === 'error'){ T.ready = null; T.worker = null; w.terminate(); rej(new Error('load')); }
       else if (m.type === 'audio'){ if (typeof m.id === 'string') lkGot(m); else ttsGot(m); }
       else if (m.type === 'fail'){ if (typeof m.id === 'string') lkFail(m); else if (m.epoch === T.epoch) T.asked.delete(m.id); }
     };
     w.onerror = () => { T.ready = null; T.worker = null; rej(new Error('load')); };
-    gpuOk().then(gpu => w.postMessage({type:'load', gpu}));
+    gpuOk().then(gpu => w.postMessage({type:'load', gpu, voice:T.voice}));
   });
   return T.ready;
 }
@@ -3940,8 +3947,24 @@ async function ttsStart(){
   T.u = ttsFirstUnit();
   if (S.lu != null && S.ln === T.units.length && S.lu < T.units.length && Math.abs((T.uw[S.lu] || 0) - (T.uw[T.u] || 0)) <= 600) T.u = S.lu;
   T.state = 'loading';
+  T.pct = T.ready && T.worker ? 85 : 0;
   ttsUi();
   try { await ttsWorker(); } catch { ttsStop(); return; }
+  if (T.state !== 'loading') return;
+  T.pct = Math.max(T.pct, 85);
+  ttsUi();
+  const need = [];
+  for (let k = 0; k < 3 && T.u + k < T.units.length; k++) need.push(T.u + k);
+  const t0 = performance.now();
+  while (T.state === 'loading' && need.some(i => !T.cache.has(i)) && performance.now() - t0 < 25000){
+    need.forEach(ttsWant);
+    const np = 85 + Math.floor(15 * need.filter(i => T.cache.has(i)).length / need.length);
+    if (np !== T.pct){ T.pct = np; ttsUi(); }
+    await new Promise(r => setTimeout(r, 60));
+  }
+  if (T.state === 'loading'){ T.pct = 100; ttsUi(); }
+  if (T.state !== 'loading') return;
+  await new Promise(r => setTimeout(r, 150));
   if (T.state !== 'loading') return;
   T.state = 'playing';
   ttsUi();
