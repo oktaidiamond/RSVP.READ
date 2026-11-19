@@ -291,7 +291,6 @@ body.read-mode .reading{display:block;position:fixed;inset:0;z-index:40;backgrou
 .read-col .r-sec{font-family:'DM Sans',sans-serif;font-weight:600;font-size:1.2em;line-height:1.35;margin:1.9em 0 .7em}
 .read-col .r-sub{font-family:'DM Mono',monospace;font-size:.72em;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 2em}
 .read-col>:first-child{margin-top:0}
-.read-col ::selection{background:var(--accent);color:var(--on-accent)}
 .read-dock{position:absolute;left:0;right:0;bottom:0;padding-bottom:18px;pointer-events:none;z-index:3}
 .read-dock-inner{max-width:840px;padding:0 24px;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
 .read-meta{display:flex;justify-content:space-between;gap:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -443,6 +442,12 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
 .lk-explain{margin-top:10px;width:100%;flex:none}
 body{-webkit-user-select:none;user-select:none}
+::selection{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+:root{color-scheme:dark}
+:root:has(body.light-mode){color-scheme:light}
+textarea,input{caret-color:var(--accent)}
+::placeholder{color:var(--muted);opacity:1}
+*{-webkit-tap-highlight-color:transparent}
 textarea,input,.read-col,.text-body,.lk-body,.lk-word,.pdf-tl,.pdf-tl span{-webkit-user-select:text;user-select:text}
 .ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .btn.sm .ic,.btn.ai .ic{width:14px;height:14px}
@@ -3484,6 +3489,8 @@ const WN_RULES = {
   a:[['er',''],['est',''],['er','e'],['est','e']]
 };
 
+const curl = t => t.replace(/``/g, '“').replace(/''/g, '”').replace(/`/g, '‘').replace(/'/g, '’').replace(/"([^"]*)"/g, '“$1”');
+
 function wnEntries(d, word){
   const e = d.w.get(word);
   if (!e) return [];
@@ -3531,7 +3538,7 @@ async function wnLookup(q, id){
   for (const e of entries){
     const head = e.word !== typed ? ` · <b>${esc(e.word)}</b>` : '';
     html += `<span class="label lk-pos">${WN_POS[e.pos]}${head}</span><ol>`;
-    for (const i of e.ids.slice(0, 2)) html += `<li>${esc(d.g[i])}</li>`;
+    for (const i of e.ids.slice(0, 2)) html += `<li>${esc(curl(d.g[i]))}</li>`;
     html += '</ol>';
   }
   return html;
@@ -3552,7 +3559,7 @@ async function dictLookup(q){
     let lastPos = null;
     defs.forEach(d => {
       if (d.pos !== lastPos){ if (lastPos !== null) html += '</ol>'; html += `<span class="label lk-pos">${esc(d.pos || '')}</span><ol>`; lastPos = d.pos; }
-      html += `<li>${esc(d.def)}</li>`;
+      html += `<li>${esc(curl(d.def))}</li>`;
     });
     return html + '</ol>';
   } catch { return null; }
@@ -3568,7 +3575,7 @@ async function wikiLookup(q){
     if (!res.ok) return null;
     const j = await res.json();
     if (!j.extract) return null;
-    return `<span class="label lk-pos">Wikipedia · ${esc(j.title || page.title || q)}</span><div>${esc(j.extract)}</div>`;
+    return `<span class="label lk-pos">Wikipedia · ${esc(j.title || page.title || q)}</span><div>${esc(curl(j.extract))}</div>`;
   } catch { return null; }
 }
 
@@ -3594,10 +3601,10 @@ async function explainSelection(){
     const r = await sample(explainPrompt(LK.text, LK.ctx || LK.text), {
       modelTier:'quick',
       signal:LK.ctrl.signal,
-      onText:({text}) => { if (id === LK.id && text){ lkEls.ai.textContent = text; placeLookup(); } }
+      onText:({text}) => { if (id === LK.id && text){ lkEls.ai.textContent = curl(text); placeLookup(); } }
     });
     if (id !== LK.id) return;
-    lkEls.ai.textContent = String(r.text || '').trim() || 'No explanation returned.';
+    lkEls.ai.textContent = curl(String(r.text || '').trim()) || 'No explanation returned.';
   } catch (e) {
     if (id !== LK.id) return;
     lkEls.ai.innerHTML = `<span class="lk-muted">${esc(e && e.code === 'rate_limited' ? 'Rate limited — try again in a moment.' : e && e.code === 'not_granted' ? 'AI access wasn’t granted.' : `Explanation failed: ${(e && e.message) || e}`)}</span>`;
@@ -3627,7 +3634,7 @@ document.addEventListener('pointerdown', e => {
 }, true);
 document.addEventListener('mouseup', e => { if (S.reading && !lkEls.box.contains(e.target)) setTimeout(checkSelection, 0); });
 rEls.text.addEventListener('touchend', () => setTimeout(checkSelection, 250));
-lkEls.box.addEventListener('mousedown', e => e.preventDefault());
+lkEls.box.addEventListener('mousedown', e => { if (!e.target.closest('.lk-body, .lk-word')) e.preventDefault(); });
 lkEls.explain.onclick = explainSelection;
 $('#lkSearch').onclick = () => { window.open('https://www.google.com/search?q=' + encodeURIComponent(LK.text), '_blank', 'noopener'); };
 $('#lkCopy').onclick = () => copyText(LK.text, $('#lkCopy'));
