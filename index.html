@@ -329,7 +329,7 @@ body.ui-hidden:not(.pdf-split) .read-scroll{-webkit-mask-image:linear-gradient(t
 body.focus .reader-inner{transition:transform .3s ease}
 .read-top{position:absolute;top:16px;right:16px;z-index:6;display:flex;gap:8px;align-items:center}
 .read-dock::before{content:'';position:absolute;inset:-28px 0 0;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 6%,transparent) 20%,color-mix(in srgb,var(--bg) 22%,transparent) 45%,color-mix(in srgb,var(--bg) 50%,transparent) 70%,color-mix(in srgb,var(--bg) 72%,transparent));opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
-.pdf-view{position:absolute;inset:0 0 var(--dockh,104px);overflow:auto;display:none;outline:none;padding:64px 16px 24px;scrollbar-width:none}
+.pdf-view{position:absolute;inset:0 0 var(--dockh,104px);overflow:auto;display:none;outline:none;padding:64px 16px 24px;scrollbar-width:none;overscroll-behavior:contain}
 .pdf-view::-webkit-scrollbar{display:none}
 body.pdf-mode .pdf-view{display:block}
 body.pdf-mode .read-scroll,body.pdf-mode #tocBtn{display:none}
@@ -370,12 +370,14 @@ body.pdf-mode.tts-active .tts-skip{display:inline-flex}
   body.pdf-mode.pdf-split .pdf-sync{right:0}
   body.pdf-mode.pdf-split .pdf-sync.down{bottom:calc(45% + 12px)}
 }
-.pdf-view.can-pan .pdf-page{cursor:grab}
-.pdf-view.panning,.pdf-view.panning .pdf-page{cursor:grabbing}
 .pdf-view.tx-anim{transition:right .25s ease,bottom .25s ease}
 .pdf-view.tx-anim .pdf-page{transition:width .25s ease,height .25s ease}
-.pdf-page{margin:0 auto 14px;background:#fff;border-radius:3px;box-shadow:0 2px 14px rgba(0,0,0,.35);overflow:hidden}
-.pdf-page canvas{display:block;width:100%;height:100%}
+.pdf-page{position:relative;margin:0 auto 14px;background:#fff;border-radius:3px;box-shadow:0 2px 14px rgba(0,0,0,.35);overflow:hidden}
+.pdf-tl{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;line-height:1}
+.pdf-tl span,.pdf-tl br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
+.pdf-tl br::selection{background:transparent}
+.pdf-tl ::selection{background:color-mix(in srgb,var(--accent) 35%,transparent);color:transparent}
+body.pdf-mode .pdf-page canvas{display:block;width:100%;height:100%}
 .recent-thumb{width:34px;height:46px;object-fit:cover;object-position:top;border-radius:4px;border:1px solid var(--border);background:#fff;flex:none}
 .ts.on{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 body.tts-active .ts{cursor:pointer;transition:background .12s;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
@@ -443,7 +445,7 @@ body.toc-open .toc{transform:none;box-shadow:var(--shadow)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
 .lk-explain{margin-top:10px;width:100%;flex:none}
 body{-webkit-user-select:none;user-select:none}
-textarea,input,.read-col,.text-body,.lk-body,.lk-word{-webkit-user-select:text;user-select:text}
+textarea,input,.read-col,.text-body,.lk-body,.lk-word,.pdf-tl,.pdf-tl span{-webkit-user-select:text;user-select:text}
 .ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .btn.sm .ic,.btn.ai .ic{width:14px;height:14px}
 .full{display:inline-flex;align-items:center;gap:6px}
@@ -2723,9 +2725,13 @@ function pdfWidth(){
   return Math.round(Math.max(200, Math.min(780, avail)) * PV.zoom);
 }
 
+function pdfTlFit(d){
+  const tl = d.querySelector('.pdf-tl');
+  if (tl) tl.style.transform = `scale(${parseFloat(d.style.width) / tl._bw})`;
+}
 function pdfLayout(){
   const w = pdfWidth();
-  [...pdfEl.children].forEach(d => { d.style.width = w + 'px'; d.style.height = Math.round(w * (+d.dataset.r || PV.ratio)) + 'px'; });
+  [...pdfEl.children].forEach(d => { d.style.width = w + 'px'; d.style.height = Math.round(w * (+d.dataset.r || PV.ratio)) + 'px'; pdfTlFit(d); });
   clearTimeout(PV.zt);
   PV.zt = setTimeout(() => [...pdfEl.children].forEach(d => { d._tok = (d._tok || 0) + 1; d._done = false; PV.io.unobserve(d); PV.io.observe(d); }), 180);
 }
@@ -2765,8 +2771,99 @@ function pdfZoom(z, ax, ay){
     const r = an.pg.getBoundingClientRect();
     pdfEl.scrollLeft += r.left + an.fx * r.width - an.ax;
     pdfEl.scrollTop += r.top + an.fy * r.height - an.ay;
+    const r2 = an.pg.getBoundingClientRect();
+    const rx = r2.left + an.fx * r2.width - an.ax, ry = r2.top + an.fy * r2.height - an.ay;
+    if (Math.abs(rx) > .5 || Math.abs(ry) > .5){
+      rbSet(Math.max(-pdfEl.clientWidth, Math.min(pdfEl.clientWidth, RB.x - rx)), Math.max(-pdfEl.clientHeight, Math.min(pdfEl.clientHeight, RB.y - ry)));
+      rbRelease(110);
+    }
   }
   pdfProgress();
+}
+const RB = {x:0, y:0, vx:0, vy:0, mode:'idle', dec:0, tail:false, ev:0, grow:0, gh:0, mag:0, until:0, raf:0, t:0, els:[]};
+const rbD = ax => Math.max(150, Math.min(300, ax === 'x' ? pdfEl.clientWidth : pdfEl.clientHeight));
+const rbRub = (r, D) => Math.sign(r) * (1 - 1 / (Math.abs(r) * 0.25 / D + 1)) * D;
+const rbRaw = (x, D) => Math.sign(x) * D * (1 / (1 - Math.min(Math.abs(x), D * 0.95) / D) - 1) / 0.25;
+function rbSet(x, y){
+  RB.x = x; RB.y = y;
+  const on = x || y, kids = pdfEl.children, c = (PV.cur || 1) - 1;
+  const lo = Math.max(0, c - 6), hi = Math.min(kids.length, c + 7);
+  const els = on ? [...kids].slice(lo, hi) : [];
+  for (const d of RB.els) if (!els.includes(d)) d.style.transform = '';
+  const tr = `translate(${x}px,${y}px)`;
+  for (const d of els) d.style.transform = tr;
+  RB.els = els;
+}
+function rbTick(t){
+  const dt = Math.min(0.032, (t - RB.t) / 1000 || 0.016);
+  RB.t = t;
+  const now = performance.now();
+  if (RB.mode === 'pull' && (now - RB.ev > 60 || now - RB.grow > 80)){ RB.mode = 'spring'; RB.tail = true; RB.vx = RB.vy = 0; }
+  if (RB.mode === 'hold' && now >= RB.until){ RB.mode = 'spring'; RB.vx = RB.vy = 0; }
+  if (RB.mode === 'spring'){
+    const w = 17;
+    RB.vx += (-w * w * RB.x - 2 * w * RB.vx) * dt;
+    RB.vy += (-w * w * RB.y - 2 * w * RB.vy) * dt;
+    let x = RB.x + RB.vx * dt, y = RB.y + RB.vy * dt;
+    if (Math.abs(x) < 0.5 && Math.abs(RB.vx) < 8) x = RB.vx = 0;
+    if (Math.abs(y) < 0.5 && Math.abs(RB.vy) < 8) y = RB.vy = 0;
+    rbSet(x, y);
+    if (!x && !y) RB.mode = 'idle';
+  }
+  RB.raf = RB.mode !== 'idle' ? requestAnimationFrame(rbTick) : 0;
+}
+function rbKick(){
+  if (RB.raf) return;
+  RB.t = performance.now();
+  RB.raf = requestAnimationFrame(rbTick);
+}
+function rbRelease(ms){
+  RB.mode = 'hold'; RB.until = performance.now() + ms;
+  rbKick();
+}
+function rbWheel(e){
+  const now = performance.now(), gap = now - RB.ev;
+  RB.ev = now;
+  const mag = Math.hypot(e.deltaX, e.deltaY);
+  if (RB.tail && !(gap < 200 && mag <= RB.mag * 1.3 + 3)) RB.tail = false;
+  const res = {x:RB.x, y:RB.y}, nat = {x:0, y:0};
+  let took = false, pull = false;
+  for (const k of ['x', 'y']){
+    const X = k === 'x', d = X ? e.deltaX : e.deltaY, od = X ? e.deltaY : e.deltaX;
+    if (!d) continue;
+    if (X && pdfEl.scrollWidth - pdfEl.clientWidth < 2 && !RB.x) continue;
+    const o = RB[k], D = rbD(k);
+    const pos = X ? pdfEl.scrollLeft : pdfEl.scrollTop;
+    const max = X ? pdfEl.scrollWidth - pdfEl.clientWidth : pdfEl.scrollHeight - pdfEl.clientHeight;
+    if (o && Math.sign(-d) !== Math.sign(o)){
+      took = true;
+      const r = rbRaw(o, D) - d;
+      if (Math.sign(r) === Math.sign(o)) res[k] = rbRub(r, D);
+      else { res[k] = 0; nat[k] = Math.sign(d) * Math.abs(r); }
+      continue;
+    }
+    if (!((d < 0 && pos <= 0) || (d > 0 && pos >= max - 1))){ nat[k] = d; continue; }
+    if (!o && Math.abs(d) < Math.abs(od) * 0.4) continue;
+    took = true;
+    if (RB.tail) continue;
+    res[k] = rbRub(rbRaw(o, D) - Math.max(-60, Math.min(60, d)), D);
+    pull = true;
+  }
+  if (!took){ RB.mag = mag; return; }
+  e.preventDefault();
+  if (nat.x) pdfEl.scrollLeft += nat.x;
+  if (nat.y) pdfEl.scrollTop += nat.y;
+  if (pull){
+    if (RB.mode !== 'pull'){ RB.mode = 'pull'; RB.vx = RB.vy = 0; RB.grow = now; RB.dec = 0; }
+    else if (gap < 40 && mag <= RB.mag){ if (mag < RB.mag && ++RB.dec >= 3){ RB.mode = 'spring'; RB.tail = true; } }
+    else RB.dec = 0;
+    const h = Math.hypot(res.x, res.y);
+    if (RB.mode === 'pull' && RB.grow === now) RB.gh = h;
+    else if (h - RB.gh > 0.6){ RB.grow = now; RB.gh = h; }
+  }
+  rbSet(res.x, res.y);
+  RB.mag = mag;
+  rbKick();
 }
 
 async function pdfRender(div){
@@ -2785,7 +2882,26 @@ async function pdfRender(div){
     div.dataset.r = base.height / base.width;
     div.style.height = Math.round(base.height * s) + 'px';
     await page.render({canvasContext:c.getContext('2d'), viewport:vp}).promise;
-    if (div._tok === tok){ div.replaceChildren(c); div._done = true; }
+    let tl = div.querySelector('.pdf-tl');
+    if (!tl && window.pdfjsLib && pdfjsLib.renderTextLayer){
+      try {
+        tl = document.createElement('div');
+        tl.className = 'pdf-tl';
+        tl._bw = base.width;
+        tl.style.width = base.width + 'px';
+        tl.style.height = base.height + 'px';
+        tl.style.setProperty('--scale-factor', 1);
+        const tc = await page.getTextContent();
+        await pdfjsLib.renderTextLayer({textContentSource:tc, container:tl, viewport:base, textDivs:[]}).promise;
+      } catch { tl = null; }
+    }
+    if (div._tok === tok){
+      const oc = div.querySelector('canvas');
+      if (oc) oc.replaceWith(c); else div.prepend(c);
+      if (tl && tl.parentNode !== div) div.appendChild(tl);
+      pdfTlFit(div);
+      div._done = true;
+    }
   } catch {}
   div._busy = false;
   if (div._again){ div._again = false; if (!div._done) pdfRender(div); }
@@ -3051,38 +3167,20 @@ const ttsSkip = d => {
 $('#ttsBack').onclick = () => ttsSkip(-1);
 $('#ttsFwd').onclick = () => ttsSkip(1);
 pdfEl.addEventListener('wheel', e => {
-  if (!e.ctrlKey) return;
+  if (!e.ctrlKey){
+    if (e.deltaMode || !PV.doc) return;
+    if (!e.deltaX && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 100) return;
+    rbWheel(e);
+    return;
+  }
   e.preventDefault();
   pdfZoom(PV.zoom * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
 }, {passive:false});
 let gz = 1;
 pdfEl.addEventListener('gesturestart', e => { e.preventDefault(); gz = PV.zoom; });
 pdfEl.addEventListener('gesturechange', e => { e.preventDefault(); pdfZoom(gz * e.scale, e.clientX, e.clientY); });
-const PAN = {on:false, id:0, x:0, y:0, l:0, t:0};
-const canPan = () => pdfEl.scrollWidth > pdfEl.clientWidth + 1 || pdfEl.scrollHeight > pdfEl.clientHeight + 1;
-pdfEl.addEventListener('pointerdown', e => {
-  if (e.pointerType !== 'mouse' || e.button !== 0 || !e.target.closest('.pdf-page') || !canPan()) return;
-  PAN.on = true; PAN.id = e.pointerId; PAN.x = e.clientX; PAN.y = e.clientY; PAN.l = pdfEl.scrollLeft; PAN.t = pdfEl.scrollTop;
-  pdfEl.setPointerCapture(e.pointerId);
-  pdfEl.classList.add('panning');
-  e.preventDefault();
-});
-pdfEl.addEventListener('pointermove', e => {
-  if (PAN.on && e.pointerId === PAN.id){
-    pdfEl.scrollLeft = PAN.l - (e.clientX - PAN.x);
-    pdfEl.scrollTop = PAN.t - (e.clientY - PAN.y);
-    return;
-  }
-  if (e.pointerType === 'mouse') pdfEl.classList.toggle('can-pan', canPan());
-});
-const panEnd = e => {
-  if (!PAN.on || e.pointerId !== PAN.id) return;
-  PAN.on = false;
-  pdfEl.classList.remove('panning');
-};
-pdfEl.addEventListener('pointerup', panEnd);
-pdfEl.addEventListener('pointercancel', panEnd);
 pdfEl.addEventListener('scroll', () => {
+  if (LK.open) placeLookup();
   if (PV.raf) return;
   PV.raf = requestAnimationFrame(() => { PV.raf = 0; pdfProgress(); });
 });
@@ -3226,6 +3324,9 @@ const LKS = {sid:0, state:'idle', parts:[], play:0, total:0, audio:null};
 const lkEls = {box:$('#lookup'), word:$('#lkWord'), dict:$('#lkDict'), ai:$('#lkAi'), explain:$('#lkExplain')};
 
 function contextFor(range){
+  const tl = n => (n.nodeType === 1 ? n : n.parentElement).closest('.pdf-tl');
+  const ta = tl(range.startContainer);
+  if (ta) return ta.textContent.replace(/\s+/g, ' ').slice(0, 3000);
   const blk = n => (n.nodeType === 1 ? n : n.parentElement).closest('#readText > *');
   const a = blk(range.startContainer), b = blk(range.endContainer);
   if (!a) return '';
@@ -3237,7 +3338,7 @@ function contextFor(range){
 function placeLookup(){
   if (!LK.open || !LK.range) return;
   const r = LK.range.getBoundingClientRect();
-  const v = rEls.scroll.getBoundingClientRect();
+  const v = (pdfEl.contains(LK.range.commonAncestorContainer) ? pdfEl : rEls.scroll).getBoundingClientRect();
   if (!r.width && !r.height || r.bottom < v.top || r.top > v.bottom){ closeLookup(); return; }
   const box = lkEls.box, p = box.getBoundingClientRect();
   const x = Math.max(8, Math.min(innerWidth - p.width - 8, r.left + r.width / 2 - p.width / 2));
@@ -3455,7 +3556,7 @@ function checkSelection(){
   const sel = window.getSelection();
   if (!sel || sel.isCollapsed || !sel.rangeCount) return;
   const range = sel.getRangeAt(0);
-  if (!rEls.text.contains(range.commonAncestorContainer)) return;
+  if (!rEls.text.contains(range.commonAncestorContainer) && !(inPdf() && pdfEl.contains(range.commonAncestorContainer))) return;
   const text = sel.toString().replace(/\s+/g, ' ').trim();
   if (!text || text.length > 1000) return;
   openLookup(range.cloneRange(), text);
