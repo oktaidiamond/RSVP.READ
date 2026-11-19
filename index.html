@@ -47,7 +47,6 @@ html,body{background:var(--bg);color:var(--text);overscroll-behavior:none}
 body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
 button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:none;background:none}
 button:disabled{opacity:.45;cursor:default}
-.bl{display:inline-flex;align-items:center;justify-content:center;gap:inherit;transition:opacity .1s ease}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 14px;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border);font-weight:500;transition:transform .12s,background .15s,border-color .15s,color .15s}
 .btn:hover:not(:disabled){border-color:var(--muted)}
 .btn:active:not(:disabled),.icon-btn:active,.tab:active,.card:active{transform:scale(.96)}
@@ -409,14 +408,9 @@ body.pdf-mode .lbl-t{display:none}
 .dock-pop input[type=range]{width:100%;background:color-mix(in srgb,var(--muted) 35%,transparent);margin:4px 0 0}
 body.pdf-mode #rAaPop .font-dd,body.pdf-mode #rAaPop .fontrow{display:none}
 .tts-dd .dd-list{left:auto;right:0;min-width:100%;max-height:60vh;overflow-y:auto}
-.tts-dd:not(.tts-sp) .dd-list{min-width:150px}
+.tts-dd .dd-list{min-width:150px}
 .dd-head{padding:8px 10px 3px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 #ttsBtn{width:112px}
-.sp-whole{font-weight:600}
-.sp-frac{color:var(--muted)}
-.sp-note{font-size:11px;color:var(--muted);margin-left:6px}
-.dd-item.sel .sp-frac,.dd-item.sel .sp-note{color:inherit}
-.tts-sp .dd-item{padding:6px 10px}
 #ttsBtn svg{width:14px;height:14px;flex:none}
 .tts-on{display:none!important}
 body.tts-active .dropdown.tts-on{display:block!important}
@@ -478,7 +472,7 @@ body.focus .transport .play .ic{width:22px;height:22px}
   .transport .btn{min-width:0;padding:0 10px;white-space:nowrap}
   .transport .play{width:100px}
 }
-@media (max-width:440px){#pdfTx .lbl,#tocBtn .lbl{display:none}#pdfTx,#tocBtn{width:34px;padding:0}}
+@media (max-width:440px){#pdfTx .lbl,#tocBtn .lbl,#tickerBtn .lbl{display:none}#pdfTx,#tocBtn,#tickerBtn{width:34px;padding:0}}
 @media (max-width:600px){
   .read-controls{margin-left:-14px;margin-right:-14px}
 }
@@ -579,7 +573,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
       </div>
 
       <div class="focus-controls">
-        <button class="btn sm" id="tickerBtn"><svg class="ic"><use href="#ic-text"/></svg> Text</button>
+        <button class="btn sm" id="tickerBtn" title="Transcript"><svg class="ic"><use href="#ic-transcript"/></svg><span class="lbl"> Transcript</span></button>
         <span class="grp"><button class="btn sm" id="fWpmDown" title="Slower"><svg class="ic"><use href="#ic-minus"/></svg></button><span class="val" id="fWpm">400 WPM</span><button class="btn sm" id="fWpmUp" title="Faster"><svg class="ic"><use href="#ic-plus"/></svg></button></span>
         <button class="btn sm" id="fAaBtn" title="Text size and font">Aa</button>
         <button class="icon-btn theme-toggle" title="Theme">
@@ -1024,8 +1018,8 @@ function seek(i){
 
 function updatePlayUI(){
   const k = S.playing ? 'pause' : S.done ? 'replay' : 'play';
-  btnSet(els.playFull, `${ic(k)} ${S.playing ? 'Pause' : S.done ? 'Replay' : 'Play'}`, k);
-  btnSet(els.playIco, ic(k), k);
+  btnSet(els.playFull, `${ic(k)} ${S.playing ? 'Pause' : S.done ? 'Replay' : 'Play'}`);
+  btnSet(els.playIco, ic(k));
 }
 
 function setWpm(v){
@@ -1350,29 +1344,13 @@ function copyText(text, btn){
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
   else fallback();
 }
-function btnSet(b, html, key){
-  b._html = html;
-  const cur = b.firstElementChild && b.firstElementChild.classList.contains('bl') ? b.firstElementChild : null;
-  const put = () => { b.innerHTML = `<span class="bl">${b._html}</span>`; };
-  if (!cur || reduceMotion()){ clearTimeout(b._sw); put(); b._k = key; return; }
-  if (b._k === key){ if (!b._sw && cur.innerHTML !== html) cur.innerHTML = html; return; }
-  b._k = key;
-  clearTimeout(b._sw);
-  cur.style.opacity = '0';
-  b._sw = setTimeout(() => {
-    b._sw = 0;
-    put();
-    const n = b.firstElementChild;
-    n.style.opacity = '0';
-    requestAnimationFrame(() => requestAnimationFrame(() => { n.style.opacity = ''; }));
-  }, 90);
-}
+function btnSet(b, html){ if (b.innerHTML !== html) b.innerHTML = html; }
 function flash(btn, t = 'Copied'){
   const icon = btn.classList.contains('icon-only');
   if (btn.dataset.label === undefined) btn.dataset.label = icon ? btn.innerHTML : btn.textContent;
-  btnSet(btn, icon ? '<svg class="ic"><use href="#ic-check"/></svg>' : esc(t), 'flash');
+  btnSet(btn, icon ? '<svg class="ic"><use href="#ic-check"/></svg>' : esc(t));
   clearTimeout(btn._t);
-  btn._t = setTimeout(() => btnSet(btn, icon ? btn.dataset.label : esc(btn.dataset.label), 'rest'), 1200);
+  btn._t = setTimeout(() => btnSet(btn, icon ? btn.dataset.label : esc(btn.dataset.label)), 1200);
 }
 
 let tipTimer, tipTarget = null;
@@ -3875,7 +3853,7 @@ window.addEventListener('resize', txSync);
 
 function ttsUi(){
   const b = tEls.btn;
-  btnSet(b, T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`, T.state);
+  btnSet(b, T.state === 'loading' ? (T.pct ? `Loading ${T.pct}%` : 'Loading…') : T.state === 'playing' ? `${ic('pause')}Pause` : T.state === 'paused' ? `${ic('play')}Resume` : `${TTS_ICON}Listen`);
   b.classList.toggle('on', T.state !== 'idle');
   document.body.classList.toggle('tts-active', T.state !== 'idle');
   pdfProgress();
@@ -4119,7 +4097,24 @@ rEls.text.addEventListener('click', e => {
     if (u >= 0) ttsJump(u, true, false);
   }, 260);
 });
-tEls.btn.onclick = ttsToggle;
+const TRH = {t:0, down:false, swallow:false};
+tEls.btn.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || T.state !== 'paused') return;
+  ttsToggle();
+  TRH.down = true; TRH.swallow = true;
+  clearTimeout(TRH.t);
+  TRH.t = setTimeout(() => { if (TRH.down && T.state === 'playing') spBoost(true); }, 250);
+});
+function trhUp(){
+  if (!TRH.down) return;
+  TRH.down = false;
+  clearTimeout(TRH.t);
+  if (T.boost) spBoost(false);
+  setTimeout(() => { TRH.swallow = false; }, 60);
+}
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, trhUp, true));
+window.addEventListener('blur', trhUp);
+tEls.btn.onclick = () => { if (TRH.swallow){ TRH.swallow = false; return; } ttsToggle(); };
 function ttsDropdown(dd, items, get, set){
   const list = dd.querySelector('.dd-list');
   const label = dd.querySelector('.tts-label');
