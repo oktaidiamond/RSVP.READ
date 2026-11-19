@@ -520,6 +520,8 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 <symbol id="ic-rename" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></symbol>
 <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></symbol>
 <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
 <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
 <symbol id="ic-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
 <symbol id="ic-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
@@ -695,7 +697,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
   <div class="hint hint-read" id="hintRead"></div>
 </div>
 <div class="lookup" id="lookup">
-  <div class="lk-head"><b class="lk-word" id="lkWord"></b><span class="lk-acts"><button class="btn sm tts-ui" id="lkSpeak" title="Play aloud"></button><button class="btn sm" id="lkCopy">Copy</button></span></div>
+  <div class="lk-head"><b class="lk-word" id="lkWord"></b><span class="lk-acts"><button class="btn sm tts-ui" id="lkSpeak" title="Play aloud"></button><button class="btn sm" id="lkSearch" title="Search Google"><svg class="ic"><use href="#ic-search"/></svg></button><button class="btn sm icon-only" id="lkCopy" title="Copy"><svg class="ic"><use href="#ic-copy"/></svg></button></span></div>
   <div class="lk-body" id="lkBody"><div class="lk-dict" id="lkDict"></div>
   <div class="lk-ai" id="lkAi"></div></div>
   <button class="btn ai sm lk-explain" id="lkExplain"><svg class="ic"><use href="#ic-ai"/></svg> Ask AI</button>
@@ -1310,10 +1312,11 @@ function copyText(text, btn){
   else fallback();
 }
 function flash(btn, t = 'Copied'){
-  if (!btn.dataset.label) btn.dataset.label = btn.textContent;
-  btn.textContent = t;
+  const icon = btn.classList.contains('icon-only');
+  if (btn.dataset.label === undefined) btn.dataset.label = icon ? btn.innerHTML : btn.textContent;
+  if (icon) btn.innerHTML = '<svg class="ic"><use href="#ic-check"/></svg>'; else btn.textContent = t;
   clearTimeout(btn._t);
-  btn._t = setTimeout(() => { btn.textContent = btn.dataset.label; }, 1200);
+  btn._t = setTimeout(() => { if (icon) btn.innerHTML = btn.dataset.label; else btn.textContent = btn.dataset.label; }, 1200);
 }
 
 let tipTimer, tipTarget = null;
@@ -3579,6 +3582,7 @@ document.addEventListener('mouseup', e => { if (S.reading && !lkEls.box.contains
 rEls.text.addEventListener('touchend', () => setTimeout(checkSelection, 250));
 lkEls.box.addEventListener('mousedown', e => e.preventDefault());
 lkEls.explain.onclick = explainSelection;
+$('#lkSearch').onclick = () => { window.open('https://www.google.com/search?q=' + encodeURIComponent(LK.text), '_blank', 'noopener'); };
 $('#lkCopy').onclick = () => copyText(LK.text, $('#lkCopy'));
 
 function lkSpeakUi(){
