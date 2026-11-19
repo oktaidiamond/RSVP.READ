@@ -1197,9 +1197,11 @@ function spHold(on){
     SPH.swallow = true; spBoost(true);
   }, 250);
 }
-const SPK = {t:0, down:false, boosted:false};
+const SPK = {t:0, down:false, boosted:false, resumed:false};
 function spaceDown(){
-  if (T.state !== 'playing'){ ttsToggle(); return; }
+  if (T.state === 'idle' || T.state === 'loading'){ ttsToggle(); return; }
+  SPK.resumed = T.state === 'paused';
+  if (SPK.resumed) ttsToggle();
   SPK.down = true; SPK.boosted = false;
   clearTimeout(SPK.t);
   SPK.t = setTimeout(() => { if (SPK.down && T.state === 'playing'){ SPK.boosted = true; spBoost(true); } }, 250);
@@ -1209,7 +1211,8 @@ function spaceUp(cancel){
   clearTimeout(SPK.t);
   SPK.down = false;
   if (SPK.boosted){ SPK.boosted = false; spBoost(false); }
-  else if (!cancel) ttsToggle();
+  else if (!cancel && !SPK.resumed) ttsToggle();
+  SPK.resumed = false;
 }
 document.addEventListener('keyup', e => { if (e.key === ' ') spaceUp(false); });
 window.addEventListener('blur', () => spaceUp(true));
