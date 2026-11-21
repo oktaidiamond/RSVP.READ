@@ -273,7 +273,17 @@ body.focus.ticker-on .ticker{opacity:1;visibility:visible;transform:translate(-5
 .ticker-track p{margin:0 0 .9em}
 .ticker.snap .ticker-track{transition:none}
 .ticker-track span.cur{color:var(--accent)}
-body.no-ai .btn.ai{display:none!important}
+#scanBox{display:none;flex-direction:column;gap:8px}
+#uploadActions.scan #scanBox{display:flex}
+#scanText,#scanOcr{display:none}
+#uploadActions.kt #scanText,#uploadActions.ko #scanOcr{display:inline-flex}
+#uploadActions.aid #uploadClean{display:none}
+#uploadActions.scan #uploadLoad,#uploadActions.scan #uploadFix,#uploadActions.scan #uploadClean{display:none}
+.btn.xai{background:transparent;border-color:var(--accent2);color:var(--accent2)}
+.btn.sc .ic,.btn.xai .ic{width:14px;height:14px}
+.xai-row{display:flex;gap:8px}
+.xai-row input{flex:1;min-width:0;height:38px;padding:0 12px;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border);color:var(--text);font:inherit}
+.xai-row input:focus{outline:none;border-color:var(--accent)}
 .grp{display:inline-flex;align-items:center;gap:6px}
 body.focus .focus-controls .val.sz{min-width:46px}
 .btn.on{border-color:var(--accent);color:var(--accent)}
@@ -468,7 +478,8 @@ body.focus .transport .play .ic{width:22px;height:22px}
 .caret .ic{width:12px;height:12px}
 .drop-icon .ic{width:34px;height:34px;stroke-width:1.75}
 .status-x{display:inline-flex}
-.status-x .ic{width:13px;height:13px}
+.status-x .ic{width:13px;height:13px;margin-top:-1px}
+.status-x{align-items:center;height:calc(12.5px*1.5)}
 .del{display:inline-flex;align-items:center;justify-content:center}
 .del .ic{width:14px;height:14px}
 .lk-thinking .ic{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
@@ -522,6 +533,7 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
 <symbol id="ic-focus" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
 <symbol id="ic-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
 <symbol id="ic-ai" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></symbol>
+<symbol id="ic-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8"/><path d="M7 12h10"/><path d="M7 16h6"/></symbol><symbol id="ic-doc" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
 <symbol id="ic-text" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></symbol>
 <symbol id="ic-caret" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 <symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
@@ -631,18 +643,18 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
     <div class="tab-body" id="tabBody">
       <div class="panel active" data-panel="paste">
         <textarea id="pasteArea" placeholder="Paste any text here…"></textarea>
+        <div class="status" id="pasteStatus"><div class="status-row"><span class="status-text"></span><button class="status-x" title="Dismiss"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
         <button class="btn primary block" id="pasteLoad"><svg class="ic"><use href="#ic-play"/></svg> Load Text into Reader</button>
         <button class="btn block" id="pasteSrc" title="Paste a source copied from another RSVP.READ (Ctrl+V)"><svg class="ic"><use href="#ic-paste"/></svg> Paste copied source</button>
         <button class="btn block" id="pasteFix" hidden><svg class="ic"><use href="#ic-text"/></svg> Fix spelling</button>
         <button class="btn ai block" id="pasteClean" hidden><svg class="ic"><use href="#ic-ai"/></svg> Clean with AI</button>
-        <div class="status" id="pasteStatus"><div class="status-row"><span class="status-text"></span><button class="status-x" title="Dismiss"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
       </div>
 
       <div class="panel" data-panel="upload">
         <div class="drop" id="drop">
           <div class="drop-icon"><svg class="ic"><use href="#ic-up"/></svg></div>
           <p>Drop a file or click to browse</p>
-          <small>.txt or .pdf — scanned PDFs use OCR</small>
+          <small>.txt or .pdf</small>
           <input type="file" id="fileInput" accept=".txt,.pdf,text/plain,application/pdf" hidden>
         </div>
         <div class="status" id="uploadStatus"><div class="status-row"><span class="status-text"></span><button class="status-x" title="Dismiss"><svg class="ic"><use href="#ic-x"/></svg></button></div><div class="status-bar"><i></i></div></div>
@@ -651,6 +663,12 @@ try{const t=JSON.parse(localStorage.getItem('rsvp-theme')||'{}');if(t.light)docu
           <button class="btn primary block" id="uploadLoad"><svg class="ic"><use href="#ic-play"/></svg> Load Text into Reader</button>
           <button class="btn block" id="uploadFix"><svg class="ic"><use href="#ic-text"/></svg> Fix spelling</button>
           <button class="btn ai block" id="uploadClean"><svg class="ic"><use href="#ic-ai"/></svg> Clean with AI</button>
+          <div id="scanBox">
+            <button class="btn sc block" id="scanText"><svg class="ic"><use href="#ic-doc"/></svg> Extract text</button>
+            <button class="btn sc block" id="scanOcr"><svg class="ic"><use href="#ic-scan"/></svg> Extract with OCR</button>
+            <button class="btn xai block" id="scanAi"><svg class="ic"><use href="#ic-ai"/></svg> Extract with AI</button>
+            <div class="xai-row" id="xaiKeyRow" hidden><input type="password" id="xaiKeyIn" placeholder="Gemini API key" autocomplete="off" spellcheck="false"><button class="btn primary" id="xaiKeySave">Save</button></div>
+          </div>
         </div>
       </div>
 
@@ -779,7 +797,7 @@ const S = {
   wpm:400, size:52, rsize:19, font:'DM Mono', text:'', title:'', focus:false, ticker:false,
   tx:0, textSpans:[], tickerSpans:[], prevIdx:-1, lines:null, docVersion:0, reading:false, dragging:false, dragFrac:0
 };
-const U = { text:'', name:'', cleaned:false, lines:null, pdfBytes:null };
+const U = { text:'', name:'', cleaned:false, lines:null, pdfBytes:null, scanPdf:null, job:0 };
 let pasteCleaned = false;
 
 const els = {
@@ -1428,7 +1446,9 @@ function status(box, {text, progress = null, type = ''}){
   bar.classList.toggle('show', progress !== null);
   if (progress !== null) bar.querySelector('i').style.width = Math.round(progress*100) + '%';
 }
-$$('.status-x').forEach(b => b.onclick = () => b.closest('.status').classList.remove('show'));
+function jobBegin(box){ const c = new AbortController(); box._ctrl = c; return c.signal; }
+function jobEnd(box, sig){ if (box._ctrl && box._ctrl.signal === sig) box._ctrl = null; }
+$$('.status-x').forEach(b => b.onclick = () => { const bx = b.closest('.status'); if (bx._ctrl) bx._ctrl.abort(); else bx.classList.remove('show'); });
 
 const pasteArea = $('#pasteArea');
 pasteArea.addEventListener('input', () => {
@@ -1446,11 +1466,13 @@ $('#pasteLoad').onclick = () => {
 };
 $('#pasteClean').onclick = async () => {
   const box = $('#pasteStatus');
-  const btns = [$('#pasteClean'), $('#pasteLoad')];
+  const btns = [$('#pasteFix'), $('#pasteClean'), $('#pasteLoad')];
   btns.forEach(b => b.disabled = true);
   let out = null;
-  try { out = await aiClean(pasteArea.value, box); }
+  const sig = jobBegin(box);
+  try { out = await aiClean(pasteArea.value, box, null, sig); }
   catch (e) { status(box, {text:`AI cleaning failed: ${(e && e.message) || e}`, type:'err'}); }
+  jobEnd(box, sig);
   btns.forEach(b => b.disabled = false);
   if (out){ pasteArea.value = out.text; pasteCleaned = true; }
 };
@@ -1460,15 +1482,63 @@ $('#pasteFix').onclick = async () => {
   const btns = [$('#pasteFix'), $('#pasteClean'), $('#pasteLoad')];
   btns.forEach(b => b.disabled = true);
   let out = null;
-  try { out = await fxClean(pasteArea.value, box); }
+  const sig = jobBegin(box);
+  try { out = await fxClean(pasteArea.value, box, null, sig); }
   catch (e) { status(box, {text:`Spell fix failed: ${(e && e.message) || e}`, type:'err'}); }
+  jobEnd(box, sig);
   btns.forEach(b => b.disabled = false);
   if (out) pasteArea.value = out.text;
 };
 
-async function getSample(){
-  if (!window.claude || typeof window.claude.use !== 'function') return null;
-  try { return await window.claude.use('sample'); } catch { return null; }
+async function getSample(gem){
+  if (window.claude && typeof window.claude.use === 'function'){
+    try { return await window.claude.use('sample'); } catch { return null; }
+  }
+  return gem || null;
+}
+
+function askKey(box, sig){
+  return new Promise((res, rej) => {
+    let row = box._keyRow;
+    if (!row){
+      row = document.createElement('div');
+      row.className = 'xai-row';
+      row.innerHTML = '<input type="password" placeholder="Gemini API key" autocomplete="off" spellcheck="false"><button class="btn primary">Save</button>';
+      box.insertAdjacentElement('afterend', row);
+      box._keyRow = row;
+    }
+    const inp = row.querySelector('input'), btn = row.querySelector('button');
+    const close = () => { row.hidden = true; inp.value = ''; btn.onclick = null; inp.onkeydown = null; };
+    const save = () => {
+      const v = inp.value.trim();
+      if (!v) return;
+      try { localStorage.setItem(XAI_KEY, v); } catch {}
+      close(); res(v);
+    };
+    btn.onclick = save;
+    inp.onkeydown = e => { if (e.key === 'Enter') save(); };
+    sig.addEventListener('abort', () => { close(); rej(new DOMException('Cancelled', 'AbortError')); }, {once:true});
+    row.hidden = false;
+    inp.focus();
+  });
+}
+
+function geminiSample(sig){
+  return async prompt => {
+    let wait = 15000;
+    for (let attempt = 0; ; attempt++){
+      const res = await gfetch([{type:'text', text:prompt}], sig);
+      let j = null; try { j = await res.json(); } catch {}
+      if (res.ok) return {text:xaiOutText(j)};
+      const msg = (j && j.error && j.error.message) || `HTTP ${res.status}`;
+      if (res.status === 429){
+        if (attempt < 3){ await xaiSleep(wait, sig); wait *= 2; continue; }
+        const err = new Error(msg); err.code = 'rate_limited'; throw err;
+      }
+      if (res.status === 400 || res.status === 401 || res.status === 403){ try { localStorage.removeItem(XAI_KEY); } catch {} }
+      throw new Error(msg);
+    }
+  };
 }
 
 function cleanPrompt(list){
@@ -1532,10 +1602,16 @@ function plausibleFix(wrong, right){
   return d <= Math.max(2, Math.ceil(Math.max(w.length, r.length) * 0.5));
 }
 
-async function aiClean(text, box, lines = null){
+async function aiClean(text, box, lines = null, sig = new AbortController().signal){
   if (!text.trim()) return null;
   status(box, {text:'Connecting to AI…', progress:0});
-  const sample = await getSample();
+  if (!(window.claude && typeof window.claude.use === 'function') && !xaiKey()){
+    status(box, {text:'Enter your Gemini API key'});
+    try { await askKey(box, sig); }
+    catch (e) { status(box, {text:'AI cleaning canceled'}); return null; }
+    status(box, {text:'Connecting to AI…', progress:0});
+  }
+  const sample = await getSample(geminiSample(sig));
   if (!sample){ status(box, {text:'AI cleaning isn’t available in this view.', type:'err'}); return null; }
   const pdf = !!(lines && lines.length);
   const blocks = groupBlocks(pdf ? prepPdfLines(lines) : prepTextLines(text));
@@ -1557,18 +1633,22 @@ async function aiClean(text, box, lines = null){
   const show = () => status(box, {text:`Cleaning with AI… ${finished} of ${batches.length} batch${batches.length > 1 ? 'es' : ''}`, progress:finished / Math.max(1, batches.length)});
   show();
   const dictP = loadWordNet().catch(() => null);
+  const abortP = new Promise((_, rej) => sig.addEventListener('abort', () => rej(new DOMException('Cancelled', 'AbortError')), {once:true}));
+  abortP.catch(() => {});
   const worker = async () => {
-    while (next < batches.length){
+    while (next < batches.length && !sig.aborted){
       const bt = batches[next++];
-      const r = await sample(cleanPrompt(bt.rows.join('\n')), {modelTier:'quick'});
+      const r = await sample(cleanPrompt(bt.rows.join('\n')), {modelTier:'quick', signal:sig});
+      if (sig.aborted) return;
       for (const f of parseFixes(r.text)) if (bt.ids.has(f.id)) fixes.push(f);
       finished++;
       show();
     }
   };
   try {
-    await Promise.all(Array.from({length:Math.min(CLEAN_PARALLEL, batches.length)}, worker));
+    await Promise.race([Promise.all(Array.from({length:Math.min(CLEAN_PARALLEL, batches.length)}, worker)), abortP]);
   } catch (e) {
+    if (e && (e.name === 'AbortError' || e.code === 'cancelled')){ status(box, {text:'AI cleaning canceled'}); return null; }
     const msg = e && e.code === 'rate_limited' ? 'Rate limited — wait a moment and try again.'
       : e && e.code === 'not_granted' ? 'AI access wasn’t granted.'
       : `AI cleaning failed: ${(e && e.message) || e}`;
@@ -1849,12 +1929,15 @@ function fxPunct(s){
   return {text:b, n};
 }
 
-async function fxClean(text, box, lines = null){
+async function fxClean(text, box, lines = null, sig = new AbortController().signal){
   if (!text.trim()) return null;
   status(box, {text:'Fixing spelling…', progress:0});
+  const abortP = new Promise((_, rej) => sig.addEventListener('abort', () => rej(new DOMException('Cancelled', 'AbortError')), {once:true}));
+  abortP.catch(() => {});
   let rank, dict;
-  try { [rank, dict] = await Promise.all([loadFreq(), loadWordNet().catch(() => null)]); }
-  catch (e){ status(box, {text:`Spell fix failed: ${(e && e.message) || e}`, type:'err'}); return null; }
+  try { [rank, dict] = await Promise.race([Promise.all([loadFreq(), loadWordNet().catch(() => null)]), abortP]); }
+  catch (e){
+    if (e && e.name === 'AbortError'){ status(box, {text:'Spell fix canceled'}); return null; } status(box, {text:`Spell fix failed: ${(e && e.message) || e}`, type:'err'}); return null; }
   const T = fxTools(rank, dict);
   const pass = (txt, lns) => {
     let n = 0;
@@ -1878,6 +1961,7 @@ async function fxClean(text, box, lines = null){
   }
   const nm = {text:cur};
   const outLines = curLines;
+  if (sig.aborted){ status(box, {text:'Spell fix canceled'}); return null; }
   status(box, {text:fixed ? `Fixed ${fmtNum(fixed)} word${fixed === 1 ? '' : 's'}` : 'Nothing needed fixing', progress:1, type:'ok'});
   return {text:nm.text, lines:outLines, fixed};
 }
@@ -1900,21 +1984,43 @@ drop.addEventListener('drop', e => {
   if (f) handleFile(f);
 });
 
-async function handleFile(file){
+async function handleFile(file, direct){
   const box = $('#uploadStatus');
-  $('#uploadActions').classList.remove('show');
+  $('#uploadActions').classList.remove('show', 'scan', 'kt', 'ko', 'aid');
+  $('#xaiKeyRow').hidden = true;
   const name = file.name;
-  U.pdfBytes = null;
+  U.pdfBytes = null; U.scanPdf = null; U.job++;
+  const job = U.job;
+  if (box._ctrl) box._ctrl.abort();
   const isPdf = /\.pdf$/i.test(name) || file.type === 'application/pdf';
   const isTxt = /\.txt$/i.test(name) || file.type === 'text/plain';
   if (!isPdf && !isTxt){ status(box, {text:'Only .txt and .pdf files are supported.', type:'err'}); return; }
+  const sig = jobBegin(box);
   try {
-    let text, lines = null;
+    let text, lines = null, scanned = false;
+    if (isPdf && !direct){
+      U.file = file;
+      const kind = await probePdf(file, box, sig);
+      if (job !== U.job) return;
+      U.text = ''; U.lines = null; U.name = name.replace(/\.(pdf|txt)$/i,''); U.cleaned = false;
+      $('#fileName').textContent = name;
+      status(box, {text:kind === 'ko' ? 'No selectable text in this PDF' : 'This PDF has selectable text'});
+      $('#uploadActions').classList.add('show', 'scan', kind);
+      return;
+    }
     if (isTxt){
       status(box, {text:`Reading ${name}…`});
       text = await file.text();
     } else {
-      ({text, lines} = await extractPdf(file, box));
+      ({text, lines, scanned} = await extractPdf(file, box, sig));
+    }
+    if (job !== U.job) return;
+    if (scanned){
+      U.text = ''; U.lines = null; U.name = name.replace(/\.(pdf|txt)$/i,''); U.cleaned = false;
+      $('#fileName').textContent = name;
+      status(box, {text:'No selectable text in this PDF'});
+      $('#uploadActions').classList.add('show', 'scan', 'ko');
+      return;
     }
     if (!text || !text.trim()){ status(box, {text:'No text could be extracted from this file.', type:'err'}); return; }
     U.text = text; U.lines = lines; U.name = name.replace(/\.(pdf|txt)$/i,''); U.cleaned = false;
@@ -1922,11 +2028,40 @@ async function handleFile(file){
     status(box, {text:`Extracted ${fmtNum(tokenize(text).flat().length)} words`, progress:1, type:'ok'});
     $('#uploadActions').classList.add('show');
   } catch (e) {
-    status(box, {text:`Couldn’t read file: ${(e && e.message) || e}`, type:'err'});
+    if (job !== U.job) return;
+    if (e && e.name === 'AbortError'){
+      status(box, {text:'Text extraction canceled'});
+      if (direct && U.pdfBytes) $('#uploadActions').classList.add('show', 'scan', 'kt');
+      else U.pdfBytes = null;
+    }
+    else status(box, {text:`Couldn’t read file: ${(e && e.message) || e}`, type:'err'});
+  } finally {
+    jobEnd(box, sig);
   }
 }
 
-async function extractPdf(file, box){
+async function probePdf(file, box, sig){
+  if (!window.pdfjsLib) throw new Error('PDF library failed to load');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  status(box, {text:'Opening PDF…'});
+  const buf = await file.arrayBuffer();
+  U.pdfBytes = new Uint8Array(buf.slice(0));
+  const pdf = await pdfjsLib.getDocument({data:new Uint8Array(buf), isEvalSupported:false, disableFontFace:true}).promise;
+  const k = Math.min(pdf.numPages, 5);
+  let chars = 0;
+  for (let p = 1; p <= k; p++){
+    if (sig.aborted) throw new DOMException('Cancelled', 'AbortError');
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    chars += tc.items.map(i => i.str).join('').replace(/\s/g, '').length;
+    page.cleanup();
+  }
+  if (chars >= k * 20) return 'kt';
+  U.scanPdf = pdf;
+  return 'ko';
+}
+
+async function extractPdf(file, box, sig){
   if (!window.pdfjsLib) throw new Error('PDF library failed to load');
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   status(box, {text:'Opening PDF…', progress:0});
@@ -1937,6 +2072,7 @@ async function extractPdf(file, box){
   const n = pdf.numPages;
   const pages = [], lines = [];
   for (let p = 1; p <= n; p++){
+    if (sig.aborted) throw new DOMException('Cancelled', 'AbortError');
     status(box, {text:`Extracting text… page ${p} of ${n}`, progress:(p-1)/n});
     const page = await pdf.getPage(p);
     const tc = await page.getTextContent();
@@ -1982,10 +2118,11 @@ async function extractPdf(file, box){
   }
   const text = pages.join('\n\n');
   if (text.replace(/\s/g,'').length >= n * 20) return {text, lines};
-  return {text: await ocrPdf(pdf, box), lines:null};
+  U.scanPdf = pdf;
+  return {text:'', lines:null, scanned:true};
 }
 
-async function ocrPdf(pdf, box){
+async function ocrPdf(pdf, box, sig){
   if (!window.Tesseract) throw new Error('OCR library failed to load');
   const n = pdf.numPages;
   let page = 0;
@@ -2008,8 +2145,11 @@ importScripts('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.2/worker.
     }
   });
   const out = [];
+  const abortP = new Promise((_, rej) => sig.addEventListener('abort', () => rej(new DOMException('Cancelled', 'AbortError')), {once:true}));
+  abortP.catch(() => {});
   try {
     for (let p = 1; p <= n; p++){
+      if (sig.aborted) throw new DOMException('Cancelled', 'AbortError');
       page = p;
       status(box, {text:`Running OCR… page ${p} of ${n}`, progress:(p-1)/n});
       const pg = await pdf.getPage(p);
@@ -2019,7 +2159,7 @@ importScripts('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.2/worker.
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
       await pg.render({canvasContext:ctx, viewport:vp}).promise;
-      const {data:{text}} = await worker.recognize(canvas);
+      const {data:{text}} = await Promise.race([worker.recognize(canvas), abortP]);
       out.push(text.trim());
       canvas.width = canvas.height = 0;
     }
@@ -2031,21 +2171,237 @@ importScripts('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.2/worker.
 
 $('#uploadLoad').onclick = () => { if (U.text) loadText(U.text, {title:U.name, cleaned:U.cleaned, lines:U.lines, pdf:U.pdfBytes}); };
 $('#uploadClean').onclick = async () => {
-  const btns = [$('#uploadClean'), $('#uploadLoad')];
+  const btns = [$('#uploadFix'), $('#uploadClean'), $('#uploadLoad')];
   btns.forEach(b => b.disabled = true);
   let out = null;
-  try { out = await aiClean(U.text, $('#uploadStatus'), U.lines); }
+  const sig = jobBegin($('#uploadStatus'));
+  try { out = await aiClean(U.text, $('#uploadStatus'), U.lines, sig); }
   catch (e) { status($('#uploadStatus'), {text:`AI cleaning failed: ${(e && e.message) || e}`, type:'err'}); }
+  jobEnd($('#uploadStatus'), sig);
   btns.forEach(b => b.disabled = false);
   if (out){ U.text = out.text; U.lines = out.lines; U.cleaned = true; }
 };
+
+const XAI_KEY = 'rsvp-gemini-key', XAI_MODEL = 'gemini-3.8-flash', XAI_CHUNK = 10;
+let XAI_TIMEOUT = 240000;
+const XAI_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+const XAI_PROMPT = `I'm attaching pages from a PDF. Extract its body text as clean plain text for reading aloud and speed reading, so anything that would interrupt the flow of the text should go.
+
+Include:
+- All body text in reading order, with paragraphs separated by a blank line.
+- Chapter titles and section headings, each on its own line with a blank line before and after, and no punctuation at the end. If a chapter has a label such as "Chapter 3", put it on its own line with the chapter's title on the next line.
+
+Remove:
+- Page numbers, running headers and footers (text repeated at the top or bottom of every page, such as the book or chapter title), and copyright lines.
+- Footnotes and endnotes, plus the footnote numbers stuck to words in the text.
+- Figure and table captions, and the contents of tables and figures.
+- Table-of-contents entries.
+- In-text citations like (Smith, 2019), (Smith and Jones 2019; Lee 2020), [3] or [1, 2]. Leave other parentheticals alone: asides, definitions, abbreviations, cross-references like (see below), and list markers like (a).
+
+Fix:
+- OCR errors: wrong letters (tbe→the, rn read as m), stray symbols, and words split or merged by mistake.
+- Words hyphenated across line or page breaks: rejoin them.
+- Lines broken mid-sentence: join them.
+
+Do not summarize, rephrase, modernize spelling, or change names or punctuation that could be correct. Output only the text, with no commentary.`;
+const claudeOn = () => !!(window.claude && typeof window.claude.use === 'function');
+const xaiKey = () => { try { return localStorage.getItem(XAI_KEY) || ''; } catch { return ''; } };
+
+function scanDone(text, msg, clean, type = 'ok'){
+  U.text = text; U.lines = null; U.cleaned = clean;
+  $('#uploadActions').classList.remove('scan', 'kt', 'ko');
+  $('#uploadActions').classList.toggle('aid', !!clean);
+  status($('#uploadStatus'), {text:msg || `Extracted ${fmtNum(tokenize(text).flat().length)} words`, progress:1, type});
+}
+const scanBusy = on => {
+  [$('#scanText'), $('#scanOcr'), $('#scanAi'), $('#xaiKeySave')].forEach(b => b.disabled = on);
+};
+$('#scanText').onclick = () => { $('#xaiKeyRow').hidden = true; handleFile(U.file, true); };
+$('#scanOcr').onclick = async () => {
+  const box = $('#uploadStatus'), job = U.job;
+  $('#xaiKeyRow').hidden = true;
+  scanBusy(true);
+  const sig = jobBegin(box);
+  try {
+    const text = await ocrPdf(U.scanPdf, box, sig);
+    if (job !== U.job){ jobEnd(box, sig); scanBusy(false); return; }
+    if (!text || !text.trim()) status(box, {text:'No text could be recognized in this file.', type:'err'});
+    else scanDone(text, null, false);
+  } catch (e) { if (job === U.job) status(box, e && e.name === 'AbortError' ? {text:'OCR canceled'} : {text:`OCR failed: ${(e && e.message) || e}`, type:'err'}); }
+  jobEnd(box, sig);
+  scanBusy(false);
+};
+
+const xaiSleep = (ms, sig) => new Promise((res, rej) => {
+  const t = setTimeout(res, ms);
+  sig.addEventListener('abort', () => { clearTimeout(t); rej(new DOMException('Cancelled', 'AbortError')); }, {once:true});
+});
+const xaiB64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+async function xaiSlicer(){
+  if (window.PDFLib) return;
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+    s.onload = res; s.onerror = () => rej(new Error('PDF slicing library failed to load'));
+    document.head.appendChild(s);
+  });
+}
+function xaiOutText(j){
+  if (!j) return '';
+  if (typeof j.output_text === 'string') return j.output_text;
+  const parts = [];
+  const take = c => { if (c && c.type === 'text' && c.text) parts.push(c.text); };
+  if (Array.isArray(j.outputs)) j.outputs.forEach(take);
+  if (Array.isArray(j.steps)) j.steps.forEach(st => { if (st && Array.isArray(st.content)) st.content.forEach(take); });
+  return parts.join('');
+}
+async function gfetch(input, sig){
+  const ctl = new AbortController();
+  const onAbort = () => ctl.abort();
+  sig.addEventListener('abort', onAbort, {once:true});
+  let timedOut = false;
+  const to = setTimeout(() => { timedOut = true; ctl.abort(); }, XAI_TIMEOUT);
+  try {
+    return await fetch(XAI_URL, {
+      method:'POST', signal:ctl.signal,
+      headers:{'Content-Type':'application/json', 'x-goog-api-key':xaiKey()},
+      body:JSON.stringify({model:XAI_MODEL, input})
+    });
+  } catch (e) {
+    if (timedOut && !sig.aborted) throw new Error(`Gemini didn’t respond in ${Math.round(XAI_TIMEOUT / 60000)} minutes`);
+    throw e;
+  } finally {
+    clearTimeout(to);
+    sig.removeEventListener('abort', onAbort);
+  }
+}
+async function xaiCall(b64, sig, note){
+  let wait = 15000;
+  for (let attempt = 0; ; attempt++){
+    const res = await gfetch([{type:'document', data:b64, mime_type:'application/pdf'}, {type:'text', text:XAI_PROMPT}], sig);
+    let j = null; try { j = await res.json(); } catch {}
+    if (res.ok){
+      const t = xaiOutText(j).trim();
+      if (!t) throw new Error('The model returned no text');
+      return {text:t, retried:attempt > 0};
+    }
+    const msg = (j && j.error && j.error.message) || `HTTP ${res.status}`;
+    if (res.status === 429 && attempt < 3){ if (note) note(wait / 1000); await xaiSleep(wait, sig); wait *= 2; continue; }
+    throw new Error(msg);
+  }
+}
+function xaiJoin(parts){
+  let out = '';
+  for (const p of parts){
+    if (!out){ out = p; continue; }
+    out += (/[^.!?:"”’)\]\n]$/.test(out) && /^[a-z]/.test(p)) ? ' ' + p : '\n\n' + p;
+  }
+  return out;
+}
+async function xaiPageBlob(page){
+  const v1 = page.getViewport({scale:1});
+  const scale = Math.min(2.5, Math.sqrt(1.2e6 / (v1.width * v1.height)));
+  const vp = page.getViewport({scale});
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  await page.render({canvasContext:ctx, viewport:vp}).promise;
+  const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+  c.width = c.height = 0;
+  return blob;
+}
+const claudeErr = e => e && e.code === 'rate_limited' ? new Error('Rate limited, wait a moment and try again')
+  : e && e.code === 'not_granted' ? new Error('AI access wasn’t granted')
+  : e;
+async function xaiClaudeRun(box, sig, done, note){
+  const sample = await window.claude.use('sample');
+  if (!sample) throw new Error('AI isn’t available in this view');
+  let per = 5;
+  try { const lim = await sample.limits(); per = Math.max(1, Math.min(per, lim && lim.images ? lim.images.maxCount : 1)); } catch { per = 1; }
+  const pdf = await pdfjsLib.getDocument({data:U.pdfBytes.slice(), isEvalSupported:false, disableFontFace:true}).promise;
+  const total = pdf.numPages;
+  const n = Math.ceil(total / per);
+  for (let c = 0; c < n; c++){
+    if (sig.aborted) throw new DOMException('Cancelled', 'AbortError');
+    const a = c * per, b = Math.min(total, a + per);
+    status(box, {text:`Extracting with AI · chunk ${c + 1} of ${n} (pages ${a + 1}–${b})`, progress:c / n});
+    const blobs = [];
+    for (let p = a + 1; p <= b; p++){
+      const page = await pdf.getPage(p);
+      blobs.push(await xaiPageBlob(page));
+      page.cleanup();
+    }
+    let r;
+    try { r = await sample(XAI_PROMPT, {images:blobs, signal:sig, cache:false}); }
+    catch (e) {
+      if (e && e.code === 'cancelled') throw new DOMException('Cancelled', 'AbortError');
+      throw claudeErr(e);
+    }
+    if (r.truncated) throw new Error('The answer was cut short');
+    done.push({t:r.text.trim(), to:b});
+  }
+}
+async function xaiRun(){
+  const box = $('#uploadStatus'), job = U.job;
+  scanBusy(true);
+  const sig = jobBegin(box);
+  const done = [];
+  let retried = false;
+  try {
+    status(box, {text:'Preparing PDF…', progress:0});
+    if (claudeOn()) await xaiClaudeRun(box, sig, done);
+    else {
+    await xaiSlicer();
+    const src = await PDFLib.PDFDocument.load(U.pdfBytes, {ignoreEncryption:true});
+    const total = src.getPageCount();
+    const n = Math.ceil(total / XAI_CHUNK);
+    for (let c = 0; c < n; c++){
+      const a = c * XAI_CHUNK, b = Math.min(total, a + XAI_CHUNK);
+      const line = `Extracting with AI · chunk ${c + 1} of ${n} (pages ${a + 1}–${b})${retried ? ' · retried after rate limit' : ''}`;
+      status(box, {text:line, progress:c / n});
+      const part = await PDFLib.PDFDocument.create();
+      const pgs = await part.copyPages(src, Array.from({length:b - a}, (_, k) => a + k));
+      pgs.forEach(p => part.addPage(p));
+      const r = await xaiCall(xaiB64(await part.save()), sig, secs => status(box, {text:`${line} · rate limited, retrying in ${secs}s`, progress:c / n}));
+      if (r.retried) retried = true;
+      done.push({t:r.text, to:b});
+    }
+    }
+    if (job === U.job) scanDone(xaiJoin(done.map(d => d.t)), null, true);
+  } catch (e) {
+    if (job !== U.job){ jobEnd(box, sig); scanBusy(false); return; }
+    const kept = done.length ? ` · kept pages 1–${done[done.length - 1].to}` : '';
+    const why = e && e.name === 'AbortError' ? 'AI extraction canceled' : `AI extraction failed: ${(e && e.message) || e}`;
+    if (done.length) scanDone(xaiJoin(done.map(d => d.t)), why + kept, true, 'err');
+    else status(box, e && e.name === 'AbortError' ? {text:why} : {text:why, type:'err'});
+  }
+  jobEnd(box, sig);
+  scanBusy(false);
+}
+$('#scanAi').onclick = () => {
+  if (claudeOn() || xaiKey()) { $('#xaiKeyRow').hidden = true; xaiRun(); return; }
+  $('#xaiKeyRow').hidden = false;
+  $('#xaiKeyIn').focus();
+};
+$('#xaiKeySave').onclick = () => {
+  const v = $('#xaiKeyIn').value.trim();
+  if (!v) return;
+  try { localStorage.setItem(XAI_KEY, v); } catch {}
+  $('#xaiKeyIn').value = '';
+  $('#xaiKeyRow').hidden = true;
+  xaiRun();
+};
+$('#xaiKeyIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('#xaiKeySave').click(); });
 
 $('#uploadFix').onclick = async () => {
   const btns = [$('#uploadFix'), $('#uploadClean'), $('#uploadLoad')];
   btns.forEach(b => b.disabled = true);
   let out = null;
-  try { out = await fxClean(U.text, $('#uploadStatus'), U.lines); }
+  const sig = jobBegin($('#uploadStatus'));
+  try { out = await fxClean(U.text, $('#uploadStatus'), U.lines, sig); }
   catch (e) { status($('#uploadStatus'), {text:`Spell fix failed: ${(e && e.message) || e}`, type:'err'}); }
+  jobEnd($('#uploadStatus'), sig);
   btns.forEach(b => b.disabled = false);
   if (out){ U.text = out.text; U.lines = out.lines; }
 };
@@ -2255,8 +2611,10 @@ async function runFix(e){
   recentBusy = true;
   const box = $('#recentStatus');
   let out = null;
-  try { out = await fxClean(e.text, box, e.lines); }
+  const sig = jobBegin(box);
+  try { out = await fxClean(e.text, box, e.lines, sig); }
   catch (err) { status(box, {text:`Spell fix failed: ${(err && err.message) || err}`, type:'err'}); }
+  jobEnd(box, sig);
   recentBusy = false;
   if (out && out.text.trim() !== e.text) recentApply(e, out, !!e.cleaned, out.fixed ? `Fixed ${fmtNum(out.fixed)} word${out.fixed === 1 ? '' : 's'}` : 'Fixed spelling');
   renderRecent();
@@ -2266,8 +2624,10 @@ async function runClean(e){
   recentBusy = true;
   const box = $('#recentStatus');
   let out = null;
-  try { out = await aiClean(e.text, box, e.lines); }
+  const sig = jobBegin(box);
+  try { out = await aiClean(e.text, box, e.lines, sig); }
   catch (err) { status(box, {text:`AI cleaning failed: ${(err && err.message) || err}`, type:'err'}); }
+  jobEnd(box, sig);
   recentBusy = false;
   if (out){
     if (out.text.trim() !== e.text) recentApply(e, out, true, 'Cleaned with AI');
@@ -2310,7 +2670,6 @@ function openMenu(btn, e, row){
   m.className = 'rmenu';
   m.setAttribute('role', 'menu');
   for (const it of items){
-    if (it && it.ai && document.body.classList.contains('no-ai')) continue;
     if (!it){ m.appendChild(document.createElement('hr')); continue; }
     const b = document.createElement('button');
     const lab = document.createElement('span');
@@ -3648,10 +4007,19 @@ async function explainSelection(){
   lkEls.explain.hidden = true;
   lkEls.ai.innerHTML = '<span class="lk-thinking">' + ic('ai') + ' Thinking…</span>';
   placeLookup();
-  const sample = await getSample();
+  LK.ctrl = new AbortController();
+  if (!claudeOn() && !xaiKey()){
+    lkEls.ai.innerHTML = '<span class="lk-muted">Enter your Gemini API key</span>';
+    placeLookup();
+    try { await askKey(lkEls.ai, LK.ctrl.signal); }
+    catch { return; }
+    if (id !== LK.id) return;
+    lkEls.ai.innerHTML = '<span class="lk-thinking">' + ic('ai') + ' Thinking…</span>';
+    placeLookup();
+  }
+  const sample = await getSample(geminiSample(LK.ctrl.signal));
   if (id !== LK.id) return;
   if (!sample){ lkEls.ai.innerHTML = '<span class="lk-muted">AI explanations aren’t available in this view.</span>'; placeLookup(); return; }
-  LK.ctrl = new AbortController();
   try {
     const r = await sample(explainPrompt(LK.text, LK.ctx || LK.text), {
       modelTier:'quick',
