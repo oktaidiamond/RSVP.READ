@@ -1925,7 +1925,18 @@ function fxPunct(s){
     n++;
     return w + p + c + ' ' + d;
   });
-  const b = q.replace(/(\p{L}{2})([,;])(\p{L}{2})/gu, (m, w, p, c) => { n++; return w + p + ' ' + c; });
+  const r1 = q.replace(/(\p{Lu}{2,}|\d{2,}|\))\.(\p{Lu}\p{Ll})/gu, (m, w, c, off, str) => {
+    if (/[.\/@:]/.test(str[off - 1] || '') || ABBR.test(str.slice(0, off + w.length + 1))) return m;
+    n++;
+    return w + '. ' + c;
+  });
+  const r2 = r1.replace(/(\p{Ll}{2,}|\p{Lu}{2,}|\d{2,}|\))\.([AI])(?=\s)/gu, (m, w, c, off, str) => {
+    if (/[.\/@:]/.test(str[off - 1] || '') || ABBR.test(str.slice(0, off + w.length + 1))) return m;
+    n++;
+    return w + '. ' + c;
+  });
+  const r3 = r2.replace(/(\.{3}|\u2026)(\p{Lu}\p{Ll})/gu, (m, e, c) => { n++; return e + ' ' + c; });
+  const b = r3.replace(/(\p{L}{2})([,;])(\p{L}{2})/gu, (m, w, p, c) => { n++; return w + p + ' ' + c; });
   return {text:b, n};
 }
 
