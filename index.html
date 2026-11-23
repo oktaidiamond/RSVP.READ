@@ -1649,7 +1649,7 @@ async function aiClean(text, box, lines = null, sig = new AbortController().sign
     await Promise.race([Promise.all(Array.from({length:Math.min(CLEAN_PARALLEL, batches.length)}, worker)), abortP]);
   } catch (e) {
     if (e && (e.name === 'AbortError' || e.code === 'cancelled')){ status(box, {text:'AI cleaning canceled'}); return null; }
-    const msg = e && e.code === 'rate_limited' ? 'Rate limited — wait a moment and try again.'
+    const msg = e && e.code === 'rate_limited' ? 'Rate limited, wait a moment and try again.'
       : e && e.code === 'not_granted' ? 'AI access wasn’t granted.'
       : `AI cleaning failed: ${(e && e.message) || e}`;
     status(box, {text:msg, type:'err'});
@@ -1701,14 +1701,16 @@ async function aiClean(text, box, lines = null, sig = new AbortController().sign
     if (!kept.has(u.block)) kept.set(u.block, []);
     kept.get(u.block).push(u.text);
   });
-  const outBlocks = blocks.filter(b => kept.has(b)).map(b => ({b, text:reflow(kept.get(b))})).filter(o => o.text);
+  let spaced = 0;
+  const outBlocks = blocks.filter(b => kept.has(b)).map(b => { const sp = fxPunct(reflow(kept.get(b))); spaced += sp.n; return {b, text:sp.text}; }).filter(o => o.text);
   const out = outBlocks.map(o => o.text).join('\n\n');
   if (!out.trim()){ status(box, {text:'Cleaning found no body text, so the original was kept.', type:'err'}); return null; }
   const outLines = pdf ? outBlocks.map((o, i) => ({t:o.text, s:o.b.s, b:o.b.b, p:1, x:0, y:1e7 - i * 1000})) : null;
   const parts = [];
   if (fixed) parts.push(`fixed ${fmtNum(fixed)} word${fixed === 1 ? '' : 's'}`);
+  if (spaced) parts.push(`fixed spacing in ${fmtNum(spaced)} place${spaced === 1 ? '' : 's'}`);
   if (deleted.size + cuts) parts.push(`removed ${fmtNum(deleted.size + cuts)} junk piece${deleted.size + cuts === 1 ? '' : 's'}`);
-  status(box, {text:parts.length ? `Cleaned — ${parts.join(', ')}` : 'Nothing needed fixing', progress:1, type:'ok'});
+  status(box, {text:parts.length ? `Cleaned: ${parts.join(', ')}` : 'Nothing needed fixing', progress:1, type:'ok'});
   return {text:out, lines:outLines};
 }
 
@@ -2137,7 +2139,7 @@ async function ocrPdf(pdf, box, sig){
   if (!window.Tesseract) throw new Error('OCR library failed to load');
   const n = pdf.numPages;
   let page = 0;
-  status(box, {text:'No selectable text — starting OCR…', progress:0});
+  status(box, {text:'No selectable text, starting OCR…', progress:0});
   const src = `self.ENG_TRAINEDDATA=${JSON.stringify($('#engdata').textContent)};
 const nativeFetch = self.fetch.bind(self);
 self.fetch = (u, o) => String(u).endsWith('/eng.traineddata.gz')
@@ -2379,12 +2381,12 @@ async function xaiRun(){
       done.push({t:r.text, to:b});
     }
     }
-    if (job === U.job) scanDone(xaiJoin(done.map(d => d.t)), null, true);
+    if (job === U.job) scanDone(fxPunct(xaiJoin(done.map(d => d.t))).text, null, true);
   } catch (e) {
     if (job !== U.job){ jobEnd(box, sig); scanBusy(false); return; }
     const kept = done.length ? ` · kept pages 1–${done[done.length - 1].to}` : '';
     const why = e && e.name === 'AbortError' ? 'AI extraction canceled' : `AI extraction failed: ${(e && e.message) || e}`;
-    if (done.length) scanDone(xaiJoin(done.map(d => d.t)), why + kept, true, 'err');
+    if (done.length) scanDone(fxPunct(xaiJoin(done.map(d => d.t))).text, why + kept, true, 'err');
     else status(box, e && e.name === 'AbortError' ? {text:why} : {text:why, type:'err'});
   }
   jobEnd(box, sig);
@@ -4041,7 +4043,7 @@ async function explainSelection(){
     lkEls.ai.textContent = curl(String(r.text || '').trim()) || 'No explanation returned.';
   } catch (e) {
     if (id !== LK.id) return;
-    lkEls.ai.innerHTML = `<span class="lk-muted">${esc(e && e.code === 'rate_limited' ? 'Rate limited — try again in a moment.' : e && e.code === 'not_granted' ? 'AI access wasn’t granted.' : `Explanation failed: ${(e && e.message) || e}`)}</span>`;
+    lkEls.ai.innerHTML = `<span class="lk-muted">${esc(e && e.code === 'rate_limited' ? 'Rate limited, try again in a moment.' : e && e.code === 'not_granted' ? 'AI access wasn’t granted.' : `Explanation failed: ${(e && e.message) || e}`)}</span>`;
   }
   placeLookup();
 }
