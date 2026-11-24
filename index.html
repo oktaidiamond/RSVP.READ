@@ -1647,6 +1647,7 @@ function selectionCornersScreen() {
    POINTER EVENTS — main canvas
    ========================================================================= */
 function toolCursor() {
+  if (dz) return 'default';
   return { pen: 'crosshair', select: 'crosshair', eraser: 'none', text: 'text' }[state.tool] || 'default';
 }
 
@@ -1774,6 +1775,7 @@ function canvasPointerDown(e) {
 canvas.addEventListener('pointerdown', canvasPointerDown);
 
 canvas.addEventListener('pointermove', (e) => {
+  if (dz) { canvas.style.cursor = 'default'; return; }
   if (gestureActive() && e.pointerId !== state.activePointerId) return;
   if (gestureActive() && e.buttons === 0) canvasPointerUp(e);
   const sp = eventScreenCoords(e);
@@ -4432,6 +4434,7 @@ function openDesmosEditor(s, isNew) {
   const mode = s.rot ? 'expand' : 'inplace';
   const d = { s, isNew, mode, live: !!s.desmos.live, type: s.desmos.type || '2d', closing: false };
   dz = d;
+  canvas.style.cursor = 'default';
   if (mode === 'expand') dzOpenExpand(d); else dzOpenInPlace(d);
 }
 
@@ -4839,6 +4842,7 @@ function dzFinish(d, result) {
   const s = d.s;
   const layer = dzLayerOf(s);
   dz = null;
+  canvas.style.cursor = toolCursor();
   if (result.removed) {
     if (layer) {
       layer.strokes = layer.strokes.filter(x => x !== s);
